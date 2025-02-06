@@ -10,7 +10,7 @@
 #SBATCH --mail-user=oskarjor@ntnu.no
 #SBATCH --mail-type=ALL
 
-module load Python/3.10.15-GCCcore-14.2.0
+module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
 python train_cifar10.py
