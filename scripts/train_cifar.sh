@@ -11,7 +11,6 @@
 #SBATCH --mail-type=ALL
 
 module load Python/3.10.15-GCCcore-14.2.0
-source /cluster/home/oskarjor/torchcfm/bin/activate
-pip install -r fm-requirements.txt
+source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
 python train_cifar10.py
