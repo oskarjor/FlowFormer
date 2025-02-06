@@ -12,6 +12,6 @@
 
 module load Python/3.10.15-GCCcore-14.2.0
 source /cluster/home/oskarjor/torchcfm/bin/activate
-pip install -r requirements.txt
+pip install -r fm-requirements.txt
 
 python train_cifar10.py
