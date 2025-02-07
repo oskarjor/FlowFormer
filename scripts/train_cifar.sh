@@ -13,4 +13,4 @@
 module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
-python train_cifar10.py
+python train_fm/train_cifar10.py
