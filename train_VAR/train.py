@@ -46,7 +46,7 @@ def build_everything(args: arg_util.Args):
 
     # build data
     if not args.local_debug:
-        print(f"[build PT data] ...\n")
+        print("[build PT data] ...\n")
         num_classes, dataset_train, dataset_val = build_dataset(
             args.data_path,
             final_reso=args.data_load_reso,
@@ -88,7 +88,7 @@ def build_everything(args: arg_util.Args):
         del dataset_train
 
         [print(line) for line in auto_resume_info]
-        print(f"[dataloader multi processing] ...", end="", flush=True)
+        print("[dataloader multi processing] ...", end="", flush=True)
         stt = time.time()
         iters_train = len(ld_train)
         ld_train = iter(ld_train)
@@ -109,10 +109,10 @@ def build_everything(args: arg_util.Args):
 
     # build models
     from torch.nn.parallel import DistributedDataParallel as DDP
-    from models import VAR, VQVAE, build_vae_var
+    from torchVAR.models import VAR, VQVAE, build_vae_var
     from trainer import VARTrainer
-    from utils.amp_sc import AmpOptimizer
-    from utils.lr_control import filter_params
+    from torchVAR.utils.amp_sc import AmpOptimizer
+    from torchVAR.utils.lr_control import filter_params
 
     vae_local, var_wo_ddp = build_vae_var(
         V=4096,
@@ -152,9 +152,9 @@ def build_everything(args: arg_util.Args):
     )
 
     print(f"[INIT] VAR model = {var_wo_ddp}\n\n")
-    count_p = lambda m: f"{sum(p.numel() for p in m.parameters()) / 1e6:.2f}"
+    count_p = lambda m: f"{sum(p.numel() for p in m.parameters()) / 1e6:.2f}"  # noqa: E731
     print(
-        f"[INIT][#para] "
+        "[INIT][#para] "
         + ", ".join(
             [
                 f"{k}={count_p(m)}"
@@ -168,7 +168,7 @@ def build_everything(args: arg_util.Args):
         )
     )
     print(
-        f"[INIT][#para] "
+        "[INIT][#para] "
         + ", ".join([f"{k}={count_p(m)}" for k, m in (("VAR", var_wo_ddp),)])
         + "\n\n"
     )
@@ -382,7 +382,7 @@ def main_training():
                 local_out_ckpt_best = os.path.join(
                     args.local_out_dir_path, "ar-ckpt-best.pth"
                 )
-                print(f"[saving ckpt] ...", end="", flush=True)
+                print("[saving ckpt] ...", end="", flush=True)
                 torch.save(
                     {
                         "epoch": ep + 1,
@@ -446,7 +446,7 @@ def train_one_ep(
 ):
     # import heavy packages after Dataloader object creation
     from trainer import VARTrainer
-    from utils.lr_control import lr_wd_annealing
+    from torchVAR.utils.lr_control import lr_wd_annealing
 
     trainer: VARTrainer
 
