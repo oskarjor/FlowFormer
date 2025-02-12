@@ -22,3 +22,7 @@ numpy
 pytz
 transformers
 typed-argument-parser
+
+# optional
+flash-attn
+xformers
