@@ -14,7 +14,7 @@ import torch
 import torch.distributed as tdist
 
 import dist
-from utils import arg_util
+from torchVAR.utils import arg_util
 
 os_system = functools.partial(subprocess.call, shell=True)
 def echo(info):
