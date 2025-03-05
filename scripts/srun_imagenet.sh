@@ -2,13 +2,14 @@
 #SBATCH --job-name="train_VAR_imagenet"
 #SBATCH --account=ie-idi
 #SBATCH --partition=GPUQ
-#SBATCH --gres=gpu:h100:2
+#SBATCH --gres=gpu:2
+#SBATCH --constraint=gpu80g
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
 #SBATCH --time=00-00:30:00
 #SBATCH --output=train_VAR_imagenet_%j.out
 #SBATCH --mail-user=oskarjor@ntnu.no
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=NONE
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 
