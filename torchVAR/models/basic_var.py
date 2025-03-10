@@ -176,6 +176,8 @@ class SelfAttention(nn.Module):
                 v = self.cached_v = torch.cat((self.cached_v, v), dim=dim_cat)
 
         dropout_p = self.attn_drop if self.training else 0.0
+        print(f"using_flash: {using_flash}, self.using_xform: {self.using_xform}")
+        print(f"q_size: {q.size()}, k_size: {k.size()}, v_size: {v.size()}")
         if using_flash:
             oup = flash_attn_func(
                 q.to(dtype=main_type),
