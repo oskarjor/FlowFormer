@@ -13,6 +13,8 @@ from torchvision import datasets, transforms
 from tqdm import trange
 from utils_cifar import ema, generate_samples, infiniteloop
 
+from torchVAR.utils.data import build_dataset
+
 from torchcfm.conditional_flow_matching import (
     ConditionalFlowMatcher,
     ExactOptimalTransportConditionalFlowMatcher,
@@ -26,13 +28,13 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("model", "otcfm", help="flow matching model type")
 flags.DEFINE_string("output_dir", "./results/", help="output_directory")
 # UNet
-flags.DEFINE_integer("num_channel", 128, help="base channel of UNet")
+flags.DEFINE_integer("num_channel", 256, help="base channel of UNet")
 
 # Training
 flags.DEFINE_float("lr", 2e-4, help="target learning rate")  # TRY 2e-4
 flags.DEFINE_float("grad_clip", 1.0, help="gradient norm clipping")
 flags.DEFINE_integer(
-    "total_steps", 400001, help="total training steps"
+    "total_steps", 800001, help="total training steps"
 )  # Lipman et al uses 400k but double batch size
 flags.DEFINE_integer("warmup", 5000, help="learning rate warmup")
 flags.DEFINE_integer("batch_size", 128, help="batch size")  # Lipman et al uses 128
@@ -66,20 +68,28 @@ def train(argv):
     )
 
     # DATASETS/DATALOADER
-    dataset = datasets.CIFAR10(
-        root="./data",
-        train=True,
-        download=True,
-        transform=transforms.Compose(
-            [
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-            ]
-        ),
+    # dataset = datasets.CIFAR10(
+    #     root="./data",
+    #     train=True,
+    #     download=True,
+    #     transform=transforms.Compose(
+    #         [
+    #             transforms.RandomHorizontalFlip(),
+    #             transforms.ToTensor(),
+    #             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    #         ]
+    #     ),
+    # )
+
+    num_classes, train_set, val_set = build_dataset(
+        data_path="./data",
+        final_reso=64,
+        hflip=True,
+        mid_reso=1.125,
     )
+
     dataloader = torch.utils.data.DataLoader(
-        dataset,
+        train_set,
         batch_size=FLAGS.batch_size,
         shuffle=True,
         num_workers=FLAGS.num_workers,
@@ -89,18 +99,26 @@ def train(argv):
     datalooper = infiniteloop(dataloader)
 
     # MODELS
+    # net_model = UNetModelWrapper(
+    #     dim=(3, 32, 32),
+    #     num_res_blocks=2,
+    #     num_channels=FLAGS.num_channel,
+    #     channel_mult=[1, 2, 2, 2],
+    #     num_heads=4,
+    #     num_head_channels=64,
+    #     attention_resolutions="16",
+    #     dropout=0.1,
+    # ).to(device)  # new dropout + bs of 128
+
     net_model = UNetModelWrapper(
-        dim=(3, 32, 32),
-        num_res_blocks=2,
+        dim=(3, 64, 64),
+        num_res_blocks=3,
         num_channels=FLAGS.num_channel,
-        channel_mult=[1, 2, 2, 2],
-        num_heads=4,
-        num_head_channels=64,
+        channel_mult=None,
+        num_heads=8,
         attention_resolutions="16",
         dropout=0.1,
-    ).to(
-        device
-    )  # new dropout + bs of 128
+    ).to(device)  # new dropout + bs of 128
 
     ema_model = copy.deepcopy(net_model)
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
@@ -148,14 +166,18 @@ def train(argv):
             vt = net_model(t, xt)
             loss = torch.mean((vt - ut) ** 2)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)  # new
+            torch.nn.utils.clip_grad_norm_(
+                net_model.parameters(), FLAGS.grad_clip
+            )  # new
             optim.step()
             sched.step()
             ema(net_model, ema_model, FLAGS.ema_decay)  # new
 
             # sample and Saving the weights
             if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
-                generate_samples(net_model, FLAGS.parallel, savedir, step, net_="normal")
+                generate_samples(
+                    net_model, FLAGS.parallel, savedir, step, net_="normal"
+                )
                 generate_samples(ema_model, FLAGS.parallel, savedir, step, net_="ema")
                 torch.save(
                     {
