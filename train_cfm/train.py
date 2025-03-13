@@ -82,7 +82,7 @@ def train(argv):
     # )
 
     num_classes, train_set, val_set = build_dataset(
-        data_path="./data",
+        data_path="./imagenet",
         final_reso=32,
         hflip=True,
         mid_reso=1.125,
