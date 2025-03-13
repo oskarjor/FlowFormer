@@ -83,7 +83,7 @@ def train(argv):
 
     num_classes, train_set, val_set = build_dataset(
         data_path="./data",
-        final_reso=64,
+        final_reso=32,
         hflip=True,
         mid_reso=1.125,
     )
@@ -99,26 +99,26 @@ def train(argv):
     datalooper = infiniteloop(dataloader)
 
     # MODELS
-    # net_model = UNetModelWrapper(
-    #     dim=(3, 32, 32),
-    #     num_res_blocks=2,
-    #     num_channels=FLAGS.num_channel,
-    #     channel_mult=[1, 2, 2, 2],
-    #     num_heads=4,
-    #     num_head_channels=64,
-    #     attention_resolutions="16",
-    #     dropout=0.1,
-    # ).to(device)  # new dropout + bs of 128
-
     net_model = UNetModelWrapper(
-        dim=(3, 64, 64),
-        num_res_blocks=3,
+        dim=(3, 32, 32),
+        num_res_blocks=2,
         num_channels=FLAGS.num_channel,
-        channel_mult=None,
-        num_heads=8,
+        channel_mult=[1, 2, 2, 2],
+        num_heads=4,
+        num_head_channels=64,
         attention_resolutions="16",
         dropout=0.1,
     ).to(device)  # new dropout + bs of 128
+
+    # net_model = UNetModelWrapper(
+    #     dim=(3, 64, 64),
+    #     num_res_blocks=3,
+    #     num_channels=FLAGS.num_channel,
+    #     channel_mult=None,
+    #     num_heads=8,
+    #     attention_resolutions="16",
+    #     dropout=0.1,
+    # ).to(device)  # new dropout + bs of 128
 
     ema_model = copy.deepcopy(net_model)
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
