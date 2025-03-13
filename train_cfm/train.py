@@ -27,6 +27,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("model", "otcfm", help="flow matching model type")
 flags.DEFINE_string("output_dir", "./results/", help="output_directory")
+flags.DEFINE_string("save_dir", f"./results/{FLAGS.model}/", help="save_directory")
 # UNet
 flags.DEFINE_integer("num_channel", 256, help="base channel of UNet")
 
@@ -154,8 +155,7 @@ def train(argv):
             f"Unknown model {FLAGS.model}, must be one of ['otcfm', 'icfm', 'fm', 'si']"
         )
 
-    savedir = FLAGS.output_dir + FLAGS.model + "/"
-    os.makedirs(savedir, exist_ok=True)
+    os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     with trange(FLAGS.total_steps, dynamic_ncols=True) as pbar:
         for step in pbar:
@@ -176,9 +176,11 @@ def train(argv):
             # sample and Saving the weights
             if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
                 generate_samples(
-                    net_model, FLAGS.parallel, savedir, step, net_="normal"
+                    net_model, FLAGS.parallel, FLAGS.save_dir, step, net_="normal"
                 )
-                generate_samples(ema_model, FLAGS.parallel, savedir, step, net_="ema")
+                generate_samples(
+                    ema_model, FLAGS.parallel, FLAGS.save_dir, step, net_="ema"
+                )
                 torch.save(
                     {
                         "net_model": net_model.state_dict(),
@@ -187,7 +189,7 @@ def train(argv):
                         "optim": optim.state_dict(),
                         "step": step,
                     },
-                    savedir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt",
+                    FLAGS.save_dir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt",
                 )
 
 
