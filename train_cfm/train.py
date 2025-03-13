@@ -27,7 +27,8 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("model", "otcfm", help="flow matching model type")
 flags.DEFINE_string("output_dir", "./results/", help="output_directory")
-flags.DEFINE_string("save_dir", f"./results/{FLAGS.model}/", help="save_directory")
+flags.DEFINE_string("save_dir", None, help="save_directory")
+
 # UNet
 flags.DEFINE_integer("num_channel", 256, help="base channel of UNet")
 
@@ -67,6 +68,9 @@ def train(argv):
         FLAGS.ema_decay,
         FLAGS.save_step,
     )
+
+    if FLAGS.save_dir is None:
+        FLAGS.save_dir = f"./results/{FLAGS.model}/"
 
     # DATASETS/DATALOADER
     # dataset = datasets.CIFAR10(
