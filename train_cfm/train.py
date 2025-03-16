@@ -105,16 +105,30 @@ def train(argv):
     datalooper = infiniteloop(dataloader)
 
     # MODELS
-    net_model = UNetModelWrapper(
-        dim=(3, FLAGS.image_size, FLAGS.image_size),
-        num_res_blocks=2,
-        num_channels=FLAGS.num_channel,
-        channel_mult=None,
-        num_heads=4,
-        num_head_channels=64,
-        attention_resolutions="16",
-        dropout=0.1,
-    ).to(device)  # new dropout + bs of 128
+    if FLAGS.image_size == 64:
+        net_model = UNetModelWrapper(
+            dim=(3, FLAGS.image_size, FLAGS.image_size),
+            num_res_blocks=2,
+            num_channels=FLAGS.num_channel,
+            channel_mult=None,
+            num_heads=8,
+            num_head_channels=32,
+            attention_resolutions="8",
+            dropout=0.1,
+            use_scale_shift_norm=True,
+            resblock_updown=True,
+        ).to(device)  # new dropout + bs of 128
+    else:
+        net_model = UNetModelWrapper(
+            dim=(3, FLAGS.image_size, FLAGS.image_size),
+            num_res_blocks=2,
+            num_channels=FLAGS.num_channel,
+            channel_mult=None,
+            num_heads=4,
+            num_head_channels=64,
+            attention_resolutions="16",
+            dropout=0.1,
+        ).to(device)  # new dropout + bs of 128
 
     ema_model = copy.deepcopy(net_model)
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
