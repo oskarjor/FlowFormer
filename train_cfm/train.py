@@ -10,7 +10,6 @@ import torch
 from absl import app, flags
 from torchdyn.core import NeuralODE
 from torchvision import datasets, transforms
-from tqdm import trange
 from utils_cifar import ema, generate_samples, infiniteloop
 
 from torchVAR.utils.data import build_dataset
@@ -50,6 +49,11 @@ flags.DEFINE_integer(
     "save_step",
     20000,
     help="frequency of saving checkpoints, 0 to disable during training",
+)
+flags.DEFINE_integer(
+    "print_step",
+    1000,
+    help="frequency of printing training progress",
 )
 
 
@@ -166,40 +170,44 @@ def train(argv):
 
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
-    with trange(FLAGS.total_steps, dynamic_ncols=True) as pbar:
-        for step in pbar:
-            optim.zero_grad()
-            x1 = next(datalooper).to(device)
-            x0 = torch.randn_like(x1)
-            t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
-            vt = net_model(t, xt)
-            loss = torch.mean((vt - ut) ** 2)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                net_model.parameters(), FLAGS.grad_clip
-            )  # new
-            optim.step()
-            sched.step()
-            ema(net_model, ema_model, FLAGS.ema_decay)  # new
+    for step in range(FLAGS.total_steps):
+        optim.zero_grad()
+        x1 = next(datalooper).to(device)
+        x0 = torch.randn_like(x1)
+        t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
+        vt = net_model(t, xt)
+        loss = torch.mean((vt - ut) ** 2)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)  # new
+        optim.step()
+        sched.step()
+        ema(net_model, ema_model, FLAGS.ema_decay)  # new
 
-            # sample and Saving the weights
-            if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
-                generate_samples(
-                    net_model, FLAGS.parallel, FLAGS.save_dir, step, net_="normal"
-                )
-                generate_samples(
-                    ema_model, FLAGS.parallel, FLAGS.save_dir, step, net_="ema"
-                )
-                torch.save(
-                    {
-                        "net_model": net_model.state_dict(),
-                        "ema_model": ema_model.state_dict(),
-                        "sched": sched.state_dict(),
-                        "optim": optim.state_dict(),
-                        "step": step,
-                    },
-                    FLAGS.save_dir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt",
-                )
+        # Print training progress at intervals
+        if step % FLAGS.print_step == 0:
+            current_lr = optim.param_groups[0]["lr"]
+            print(
+                f"Step {step}/{FLAGS.total_steps} | Loss: {loss.item():.4f} | LR: {current_lr:.2e}"
+            )
+
+        # sample and Saving the weights
+        if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
+            generate_samples(
+                net_model, FLAGS.parallel, FLAGS.save_dir, step, net_="normal"
+            )
+            generate_samples(
+                ema_model, FLAGS.parallel, FLAGS.save_dir, step, net_="ema"
+            )
+            torch.save(
+                {
+                    "net_model": net_model.state_dict(),
+                    "ema_model": ema_model.state_dict(),
+                    "sched": sched.state_dict(),
+                    "optim": optim.state_dict(),
+                    "step": step,
+                },
+                FLAGS.save_dir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt",
+            )
 
 
 if __name__ == "__main__":
