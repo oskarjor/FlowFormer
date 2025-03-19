@@ -5,6 +5,7 @@ imagenet/
 .DS_Store
 results/
 vae_ch160v4096z32.pth
+var_*.pth
 torchVAR/local_output/*
 
 # Byte-compiled / optimized / DLL files
