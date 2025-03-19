@@ -56,6 +56,7 @@ flags.DEFINE_integer(
     1000,
     help="frequency of printing training progress",
 )
+flags.DEFINE_bool("class_conditional", False, help="class conditional training")
 
 
 use_cuda = torch.cuda.is_available()
@@ -121,29 +122,32 @@ def train(argv):
 
     # MODELS
     if FLAGS.image_size == 64:
-        net_model = UNetModelWrapper(
-            dim=(3, FLAGS.image_size, FLAGS.image_size),
-            num_res_blocks=2,
-            num_channels=FLAGS.num_channel,
-            channel_mult=None,
-            num_heads=8,
-            num_head_channels=32,
-            attention_resolutions="8",
-            dropout=0.1,
-            use_scale_shift_norm=True,
-            resblock_updown=True,
-        ).to(device)  # new dropout + bs of 128
+        num_heads = 8
+        num_head_channels = 32
+        attention_resolutions = "8"
+        use_scale_shift_norm = True
+        resblock_updown = True
     else:
-        net_model = UNetModelWrapper(
-            dim=(3, FLAGS.image_size, FLAGS.image_size),
-            num_res_blocks=2,
-            num_channels=FLAGS.num_channel,
-            channel_mult=None,
-            num_heads=4,
-            num_head_channels=64,
-            attention_resolutions="16",
-            dropout=0.1,
-        ).to(device)  # new dropout + bs of 128
+        num_heads = 4
+        num_head_channels = 64
+        attention_resolutions = "16"
+        use_scale_shift_norm = True
+        resblock_updown = True
+
+    net_model = UNetModelWrapper(
+        dim=(3, FLAGS.image_size, FLAGS.image_size),
+        num_res_blocks=2,
+        num_channels=FLAGS.num_channel,
+        channel_mult=None,
+        num_heads=num_heads,
+        num_head_channels=num_head_channels,
+        attention_resolutions=attention_resolutions,
+        use_scale_shift_norm=use_scale_shift_norm,
+        resblock_updown=resblock_updown,
+        dropout=0.1,
+        class_cond=FLAGS.class_conditional,
+        num_classes=num_classes,
+    )
 
     ema_model = copy.deepcopy(net_model)
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
@@ -183,10 +187,12 @@ def train(argv):
 
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
-        x1 = next(datalooper).to(device)
+        x1, y = next(datalooper)
+        x1 = x1.to(device)
+        y = y.to(device) if FLAGS.class_conditional else None
         x0 = torch.randn_like(x1)
         t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
-        vt = net_model(t, xt)
+        vt = net_model(t, xt, y)
         loss = torch.mean((vt - ut) ** 2)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)  # new
