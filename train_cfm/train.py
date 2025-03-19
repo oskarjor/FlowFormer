@@ -5,6 +5,7 @@
 
 import copy
 import os
+import time
 
 import torch
 from absl import app, flags
@@ -65,6 +66,14 @@ def warmup_lr(step):
     return min(step, FLAGS.warmup) / FLAGS.warmup
 
 
+def format_time(seconds):
+    """Format time in seconds to a human readable string."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 def train(argv):
     print(
         "lr, total_steps, ema decay, save_step:",
@@ -73,6 +82,8 @@ def train(argv):
         FLAGS.ema_decay,
         FLAGS.save_step,
     )
+
+    start_time = time.time()
 
     if FLAGS.save_dir is None:
         FLAGS.save_dir = f"./results/{FLAGS.model}/"
@@ -186,8 +197,19 @@ def train(argv):
         # Print training progress at intervals
         if step % FLAGS.print_step == 0:
             current_lr = optim.param_groups[0]["lr"]
+            elapsed_time = time.time() - start_time
+            steps_per_second = step / elapsed_time if elapsed_time > 0 else 0
+            remaining_steps = FLAGS.total_steps - step
+            estimated_remaining_time = (
+                remaining_steps / steps_per_second if steps_per_second > 0 else 0
+            )
+
             print(
-                f"Step {step}/{FLAGS.total_steps} | Loss: {loss.item():.4f} | LR: {current_lr:.2e}"
+                f"Step {step}/{FLAGS.total_steps} | "
+                f"Loss: {loss.item():.4f} | "
+                f"LR: {current_lr:.2e} | "
+                f"Time: {format_time(elapsed_time)} | "
+                f"ETA: {format_time(estimated_remaining_time)}"
             )
 
         # sample and Saving the weights
