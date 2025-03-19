@@ -2,7 +2,7 @@ import copy
 import os
 
 import torch
-from torch import distributed as dist
+from torch import distributed as tdist
 from torchdyn.core import NeuralODE
 
 # from torchvision.transforms import ToPILImage
@@ -33,7 +33,7 @@ def setup(
     os.environ["MASTER_PORT"] = master_port
 
     # initialize the process group
-    dist.init_process_group(
+    tdist.init_process_group(
         backend=backend,
         rank=rank,
         world_size=total_num_gpus,

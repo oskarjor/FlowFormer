@@ -4,7 +4,7 @@ from typing import Tuple, List, Dict, Union
 
 import torch.nn
 
-import dist
+import torchVAR.dist as dist
 
 
 def lr_wd_annealing(sche_type: str, optimizer, peak_lr, wd, wd_end, cur_it, wp_it, max_it, wp0=0.005, wpe=0.001):
