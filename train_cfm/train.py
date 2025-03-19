@@ -189,9 +189,12 @@ def train(argv):
         optim.zero_grad()
         x1, y = next(datalooper)
         x1 = x1.to(device)
-        y = y.to(device) if FLAGS.class_conditional else None
+        y = y.to(device)
         x0 = torch.randn_like(x1)
         t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
+        print(
+            f"DEVICES: \n x1: {x1.device} \n y: {y.device} \n x0: {x0.device} \n t: {t.device} \n xt: {xt.device} \n ut: {ut.device}"
+        )
         vt = net_model(t, xt, y)
         loss = torch.mean((vt - ut) ** 2)
         loss.backward()
