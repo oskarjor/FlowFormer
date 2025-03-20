@@ -186,6 +186,7 @@ def train(argv):
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     for step in range(FLAGS.total_steps):
+        print(f"Step: {step}")
         optim.zero_grad()
         x1, y = next(datalooper)
         x1 = x1.to(device)
