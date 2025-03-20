@@ -618,6 +618,7 @@ class UNetModel(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         timesteps = t
+        print(f"y: {y}")
         assert (y is not None) == (self.num_classes is not None), (
             f"must specify y if and only if the model is class-conditional, {self.num_classes} != {y}"
         )
@@ -939,4 +940,5 @@ class UNetModelWrapper(UNetModel):
         )
 
     def forward(self, t, x, y=None, *args, **kwargs):
+        print(f"y: {y}")
         return super().forward(t, x, y=y)
