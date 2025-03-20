@@ -225,10 +225,24 @@ def train(argv):
         # sample and Saving the weights
         if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
             generate_samples(
-                net_model, FLAGS.parallel, FLAGS.save_dir, step, net_="normal"
+                net_model,
+                FLAGS.parallel,
+                FLAGS.save_dir,
+                step,
+                time_steps=100,
+                class_cond=FLAGS.class_conditional,
+                num_classes=num_classes,
+                net_="normal",
             )
             generate_samples(
-                ema_model, FLAGS.parallel, FLAGS.save_dir, step, net_="ema"
+                ema_model,
+                FLAGS.parallel,
+                FLAGS.save_dir,
+                step,
+                time_steps=100,
+                class_cond=FLAGS.class_conditional,
+                num_classes=num_classes,
+                net_="ema",
             )
             torch.save(
                 {

@@ -4,6 +4,7 @@ import os
 import torch
 from torch import distributed as tdist
 from torchdyn.core import NeuralODE
+import torchdiffeq
 
 # from torchvision.transforms import ToPILImage
 from torchvision.utils import make_grid, save_image
@@ -40,37 +41,65 @@ def setup(
     )
 
 
-def generate_samples(model, parallel, savedir, step, net_="normal"):
+def generate_samples(
+    model,
+    parallel,
+    savedir,
+    step,
+    time_steps=100,
+    image_size=32,
+    class_cond=False,
+    num_classes=1000,
+    net_="normal",
+):
     """Save 64 generated images (8 x 8) for sanity check along training.
 
     Parameters
     ----------
-    model:
-        represents the neural network that we want to generate samples from
+    model: The neural network for generating samples
     parallel: bool
-        represents the parallel training flag. Torchdyn only runs on 1 GPU, we need to send the models from several GPUs to 1 GPU.
+        represents the parallel training flag
     savedir: str
         represents the path where we want to save the generated images
     step: int
         represents the current step of training
+    class_cond: bool
+        whether to use class conditional generation
+    num_classes: int
+        number of classes for conditional generation
     """
     model.eval()
 
     model_ = copy.deepcopy(model)
     if parallel:
-        # Send the models from GPU to CPU for inference with NeuralODE from Torchdyn
         model_ = model_.module.to(device)
 
     node_ = NeuralODE(model_, solver="euler", sensitivity="adjoint")
     with torch.no_grad():
-        traj = node_.trajectory(
-            torch.randn(64, 3, 32, 32, device=device),
-            t_span=torch.linspace(0, 1, 100, device=device),
-        )
-        traj = traj[-1, :].view([-1, 3, 32, 32]).clip(-1, 1)
-        traj = traj / 2 + 0.5
-    save_image(traj, savedir + f"{net_}_generated_FM_images_step_{step}.png", nrow=8)
+        if class_cond:
+            # Generate random class labels
+            generated_class_list = torch.randint(0, num_classes, (64,), device=device)
 
+            # Use torchdiffeq's odeint with class conditioning
+            traj = torchdiffeq.odeint(
+                lambda t, x: model_(t, x, generated_class_list),
+                torch.randn(64, 3, image_size, image_size, device=device),
+                torch.linspace(0, 1, time_steps, device=device),
+                atol=1e-4,
+                rtol=1e-4,
+                method="dopri5",
+            )
+        else:
+            traj = node_.trajectory(
+                torch.randn(64, 3, image_size, image_size, device=device),
+                t_span=torch.linspace(0, 1, time_steps, device=device),
+            )
+
+        # Get final trajectory and post-process
+        traj = traj[-1].view([-1, 3, image_size, image_size]).clip(-1, 1)
+        traj = traj / 2 + 0.5
+
+    save_image(traj, savedir + f"{net_}_generated_FM_images_step_{step}.png", nrow=8)
     model.train()
 
 
