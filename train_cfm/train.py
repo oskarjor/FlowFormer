@@ -186,14 +186,10 @@ def train(argv):
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     for step in range(FLAGS.total_steps):
-        print(f"Step: {step}")
         optim.zero_grad()
         x1, y = next(datalooper)
         x1 = x1.to(device)
-        print(f"Before: {y}")
         y = y.to(device) if FLAGS.class_conditional else None
-        print(f"After: {y}")
-        print(f"FLAGS.class_conditional: {FLAGS.class_conditional}")
         x0 = torch.randn_like(x1)
         t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
         vt = net_model(t, xt, y)
