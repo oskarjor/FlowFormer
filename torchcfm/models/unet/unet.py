@@ -1,4 +1,5 @@
 """From https://raw.githubusercontent.com/openai/guided-diffusion/main/guided_diffusion/unet.py."""
+
 import math
 from abc import abstractmethod
 
@@ -91,7 +92,9 @@ class Upsample(nn.Module):
     def forward(self, x):
         assert x.shape[1] == self.channels
         if self.dims == 3:
-            x = F.interpolate(x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="nearest")
+            x = F.interpolate(
+                x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="nearest"
+            )
         else:
             x = F.interpolate(x, scale_factor=2, mode="nearest")
         if self.use_conv:
@@ -116,7 +119,9 @@ class Downsample(nn.Module):
         self.dims = dims
         stride = 2 if dims != 3 else (1, 2, 2)
         if use_conv:
-            self.op = conv_nd(dims, self.channels, self.out_channels, 3, stride=stride, padding=1)
+            self.op = conv_nd(
+                dims, self.channels, self.out_channels, 3, stride=stride, padding=1
+            )
         else:
             assert self.channels == self.out_channels
             self.op = avg_pool_nd(dims, kernel_size=stride, stride=stride)
@@ -191,13 +196,17 @@ class ResBlock(TimestepBlock):
             normalization(self.out_channels),
             nn.SiLU(),
             nn.Dropout(p=dropout),
-            zero_module(conv_nd(dims, self.out_channels, self.out_channels, 3, padding=1)),
+            zero_module(
+                conv_nd(dims, self.out_channels, self.out_channels, 3, padding=1)
+            ),
         )
 
         if self.out_channels == channels:
             self.skip_connection = nn.Identity()
         elif use_conv:
-            self.skip_connection = conv_nd(dims, channels, self.out_channels, 3, padding=1)
+            self.skip_connection = conv_nd(
+                dims, channels, self.out_channels, 3, padding=1
+            )
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
@@ -208,7 +217,9 @@ class ResBlock(TimestepBlock):
         :param emb: an [N x emb_channels] Tensor of timestep embeddings.
         :return: an [N x C x ...] Tensor of outputs.
         """
-        return checkpoint(self._forward, (x, emb), self.parameters(), self.use_checkpoint)
+        return checkpoint(
+            self._forward, (x, emb), self.parameters(), self.use_checkpoint
+        )
 
     def _forward(self, x, emb):
         if self.updown:
@@ -253,9 +264,9 @@ class AttentionBlock(nn.Module):
         if num_head_channels == -1:
             self.num_heads = num_heads
         else:
-            assert (
-                channels % num_head_channels == 0
-            ), f"q,k,v channels {channels} is not divisible by num_head_channels {num_head_channels}"
+            assert channels % num_head_channels == 0, (
+                f"q,k,v channels {channels} is not divisible by num_head_channels {num_head_channels}"
+            )
             self.num_heads = channels // num_head_channels
         self.use_checkpoint = use_checkpoint
         self.norm = normalization(channels)
@@ -497,7 +508,9 @@ class UNetModel(nn.Module):
                             down=True,
                         )
                         if resblock_updown
-                        else Downsample(ch, conv_resample, dims=dims, out_channels=out_ch)
+                        else Downsample(
+                            ch, conv_resample, dims=dims, out_channels=out_ch
+                        )
                     )
                 )
                 ch = out_ch
@@ -605,9 +618,9 @@ class UNetModel(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         timesteps = t
-        assert (y is not None) == (
-            self.num_classes is not None
-        ), "must specify y if and only if the model is class-conditional"
+        assert (y is not None) == (self.num_classes is not None), (
+            f"must specify y if and only if the model is class-conditional, {self.num_classes} != {y}"
+        )
         while timesteps.dim() > 1:
             print(timesteps.shape)
             timesteps = timesteps[:, 0]
@@ -752,7 +765,9 @@ class EncoderUNetModel(nn.Module):
                             down=True,
                         )
                         if resblock_updown
-                        else Downsample(ch, conv_resample, dims=dims, out_channels=out_ch)
+                        else Downsample(
+                            ch, conv_resample, dims=dims, out_channels=out_ch
+                        )
                     )
                 )
                 ch = out_ch
@@ -800,7 +815,9 @@ class EncoderUNetModel(nn.Module):
             self.out = nn.Sequential(
                 normalization(ch),
                 nn.SiLU(),
-                AttentionPool2d((image_size // ds), ch, num_head_channels, out_channels),
+                AttentionPool2d(
+                    (image_size // ds), ch, num_head_channels, out_channels
+                ),
             )
         elif pool == "spatial":
             self.out = nn.Sequential(
