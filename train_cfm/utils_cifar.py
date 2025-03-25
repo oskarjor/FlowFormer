@@ -51,6 +51,7 @@ def generate_samples(
     class_cond=False,
     num_classes=1000,
     net_="normal",
+    num_samples=64,
 ):
     """Save 64 generated images (8 x 8) for sanity check along training.
 
@@ -78,12 +79,16 @@ def generate_samples(
     with torch.no_grad():
         if class_cond:
             # Generate random class labels
-            generated_class_list = torch.randint(0, num_classes, (64,), device=device)
+            generated_class_list = torch.randint(
+                0, num_classes, (num_samples,), device=device
+            )
+            # Set first 16 samples to same class (340 = zebra)
+            generated_class_list[:16] = torch.tensor([340], device=device)
 
             # Use torchdiffeq's odeint with class conditioning
             traj = torchdiffeq.odeint(
                 lambda t, x: model_(t, x, generated_class_list),
-                torch.randn(64, 3, image_size, image_size, device=device),
+                torch.randn(num_samples, 3, image_size, image_size, device=device),
                 torch.linspace(0, 1, time_steps, device=device),
                 atol=1e-4,
                 rtol=1e-4,
@@ -91,7 +96,7 @@ def generate_samples(
             )
         else:
             traj = node_.trajectory(
-                torch.randn(64, 3, image_size, image_size, device=device),
+                torch.randn(num_samples, 3, image_size, image_size, device=device),
                 t_span=torch.linspace(0, 1, time_steps, device=device),
             )
 
