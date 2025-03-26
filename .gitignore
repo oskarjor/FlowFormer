@@ -7,6 +7,7 @@ results/
 vae_ch160v4096z32.pth
 var_*.pth
 torchVAR/local_output/*
+*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
