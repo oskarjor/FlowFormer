@@ -128,11 +128,11 @@ def train(argv):
 
     # MODELS
     if FLAGS.image_size == 64:
-        num_heads = 8
+        num_heads = 4
         num_head_channels = 32
-        attention_resolutions = "8"
+        attention_resolutions = "16,8"
         use_scale_shift_norm = True
-        resblock_updown = True
+        resblock_updown = False
     else:
         num_heads = 4
         num_head_channels = 64
