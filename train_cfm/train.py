@@ -129,10 +129,18 @@ def train(argv):
     # MODELS
     if FLAGS.image_size == 64:
         num_heads = 4
+        num_head_channels = 64
+        attention_resolutions = "32,16,8"
+        use_scale_shift_norm = True
+        resblock_updown = True
+        num_res_blocks = 3
+    elif FLAGS.image_size == 32:
+        num_heads = 4
         num_head_channels = 32
-        attention_resolutions = "16,8"
+        attention_resolutions = "16"
         use_scale_shift_norm = True
         resblock_updown = False
+        num_res_blocks = 2
     else:
         num_heads = 4
         num_head_channels = 64
@@ -142,7 +150,7 @@ def train(argv):
 
     net_model = UNetModelWrapper(
         dim=(3, FLAGS.image_size, FLAGS.image_size),
-        num_res_blocks=2,
+        num_res_blocks=num_res_blocks,
         num_channels=FLAGS.num_channel,
         channel_mult=None,
         num_heads=num_heads,
@@ -153,6 +161,8 @@ def train(argv):
         dropout=0.1,
         class_cond=FLAGS.class_conditional,
         num_classes=num_classes,
+        use_new_attention_order=True,
+        use_fp16=True,
     ).to(device)
 
     if FLAGS.use_wandb:
