@@ -8,6 +8,7 @@ vae_ch160v4096z32.pth
 var_*.pth
 torchVAR/local_output/*
 *.ipynb
+wandb_api_key
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

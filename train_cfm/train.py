@@ -59,6 +59,11 @@ flags.DEFINE_integer(
 )
 flags.DEFINE_bool("class_conditional", False, help="class conditional training")
 
+# Add these with your other flags in train.py
+flags.DEFINE_bool("use_wandb", True, help="whether to use wandb logging")
+flags.DEFINE_string("wandb_project", "flowformer", help="wandb project name")
+flags.DEFINE_string("wandb_entity", None, help="wandb entity/username")
+flags.DEFINE_string("wandb_name", None, help="wandb run name")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -150,6 +155,34 @@ def train(argv):
         num_classes=num_classes,
     ).to(device)
 
+    if FLAGS.use_wandb:
+        import wandb
+
+        api_key = os.environ.get("WANDB_API_KEY")
+        if not api_key:
+            print("Warning: WANDB_API_KEY not found. Wandb logging will be disabled.")
+            FLAGS.use_wandb = False
+        else:
+            try:
+                wandb.login(key=api_key)
+                run_name = (
+                    FLAGS.wandb_name
+                    or f"cfm_{FLAGS.model}_{FLAGS.image_size}x{FLAGS.image_size}_{os.environ.get('SLURM_JOB_ID', 'local')}"
+                )
+
+                wandb.init(
+                    project=FLAGS.wandb_project,
+                    entity=FLAGS.wandb_entity,
+                    name=run_name,
+                    config=FLAGS.__dict__,
+                    mode="online" if FLAGS.use_wandb else "disabled",
+                )
+                # Log model architecture
+                wandb.watch(net_model)
+            except Exception as e:
+                print(f"Warning: Failed to initialize wandb: {e}")
+                FLAGS.use_wandb = False
+
     ema_model = copy.deepcopy(net_model)
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
     sched = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=warmup_lr)
@@ -225,9 +258,20 @@ def train(argv):
                 f"ETA: {format_time(estimated_remaining_time)}"
             )
 
+            if FLAGS.use_wandb:
+                wandb.log(
+                    {
+                        "train/loss": loss.item(),
+                        "train/learning_rate": current_lr,
+                        "train/step": step,
+                        "train/elapsed_time": elapsed_time,
+                        "train/eta": estimated_remaining_time,
+                    }
+                )
+
         # sample and Saving the weights
         if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
-            generate_samples(
+            normal_samples = generate_samples(
                 net_model,
                 FLAGS.parallel,
                 FLAGS.save_dir,
@@ -237,7 +281,7 @@ def train(argv):
                 num_classes=num_classes,
                 net_="normal",
             )
-            generate_samples(
+            ema_samples = generate_samples(
                 ema_model,
                 FLAGS.parallel,
                 FLAGS.save_dir,
@@ -247,6 +291,21 @@ def train(argv):
                 num_classes=num_classes,
                 net_="ema",
             )
+
+            if FLAGS.use_wandb:
+                # Log sample images
+                wandb.log(
+                    {
+                        "samples/normal": wandb.Image(normal_samples),
+                        "samples/ema": wandb.Image(ema_samples),
+                        "samples/step": step,
+                    }
+                )
+
+                # Log model checkpoints
+                wandb.save(
+                    FLAGS.save_dir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt"
+                )
             torch.save(
                 {
                     "net_model": net_model.state_dict(),
@@ -255,7 +314,8 @@ def train(argv):
                     "optim": optim.state_dict(),
                     "step": step,
                 },
-                FLAGS.save_dir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt",
+                FLAGS.save_dir
+                + f"{FLAGS.model}_{FLAGS.image_size}x{FLAGS.image_size}_weights_step_{step}.pt",
             )
 
 
