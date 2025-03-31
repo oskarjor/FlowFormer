@@ -184,7 +184,7 @@ def train(argv):
                     project=FLAGS.wandb_project,
                     entity=FLAGS.wandb_entity,
                     name=run_name,
-                    config=FLAGS.__dict__,
+                    config=flags.FLAGS.flag_values_dict(),
                     mode="online" if FLAGS.use_wandb else "disabled",
                 )
                 # Log model architecture
