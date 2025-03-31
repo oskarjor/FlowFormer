@@ -162,7 +162,7 @@ def train(argv):
         class_cond=FLAGS.class_conditional,
         num_classes=num_classes,
         use_new_attention_order=True,
-        use_fp16=True,
+        use_fp16=False,
     ).to(device)
 
     if FLAGS.use_wandb:
