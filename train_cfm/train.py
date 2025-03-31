@@ -304,20 +304,6 @@ def train(argv):
                 net_="ema",
             )
 
-            if FLAGS.use_wandb:
-                # Log sample images
-                wandb.log(
-                    {
-                        "samples/normal": wandb.Image(normal_samples),
-                        "samples/ema": wandb.Image(ema_samples),
-                        "samples/step": step,
-                    }
-                )
-
-                # Log model checkpoints
-                wandb.save(
-                    FLAGS.save_dir + f"{FLAGS.model}_cifar10_weights_step_{step}.pt"
-                )
             torch.save(
                 {
                     "net_model": net_model.state_dict(),
