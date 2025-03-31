@@ -230,10 +230,12 @@ def train(argv):
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     # Save flags to json file
-    flags_dict = {k: v for k, v in FLAGS.__dict__.items() if not k.startswith("_")}
+    flags_dict = flags.FLAGS.flag_values_dict()
     flags_path = os.path.join(FLAGS.save_dir, "flags.json")
     with open(flags_path, "w") as f:
         json.dump(flags_dict, f, indent=4)
+
+    print(f"Saved flags to {flags_path}")
 
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
