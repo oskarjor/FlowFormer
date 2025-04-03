@@ -132,7 +132,7 @@ def train(argv):
         num_head_channels = 64
         attention_resolutions = "32,16,8"
         use_scale_shift_norm = True
-        resblock_updown = True
+        resblock_updown = False
         num_res_blocks = 3
     elif FLAGS.image_size == 32:
         num_heads = 4
