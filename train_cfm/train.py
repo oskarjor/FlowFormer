@@ -45,6 +45,7 @@ flags.DEFINE_integer("num_workers", 4, help="workers of Dataloader")
 flags.DEFINE_float("ema_decay", 0.9999, help="ema decay rate")
 flags.DEFINE_bool("parallel", False, help="multi gpu training")
 flags.DEFINE_integer("image_size", 32, help="image size")
+flags.DEFINE_string("dataset", "imagenet", help="dataset")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -96,25 +97,55 @@ def train(argv):
         FLAGS.save_dir = f"./results/{FLAGS.model}/"
 
     # DATASETS/DATALOADER
-    # dataset = datasets.CIFAR10(
-    #     root="./data",
-    #     train=True,
-    #     download=True,
-    #     transform=transforms.Compose(
-    #         [
-    #             transforms.RandomHorizontalFlip(),
-    #             transforms.ToTensor(),
-    #             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    #         ]
-    #     ),
-    # )
-
-    num_classes, train_set, val_set = build_dataset(
-        data_path="./imagenet",
-        final_reso=FLAGS.image_size,
-        hflip=True,
-        mid_reso=1.125,
-    )
+    if FLAGS.dataset == "cifar10":
+        if FLAGS.image_size != 32:
+            raise ValueError("CIFAR10 only supports 32x32 images")
+        num_classes = 10
+        train_set = datasets.CIFAR10(
+            root="./data",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                ]
+            ),
+        )
+    elif FLAGS.dataset == "imagenet":
+        if FLAGS.image_size not in [32, 64, 128, 256]:
+            raise ValueError(
+                "Imagenet only supports 32x32, 64x64, 128x128, 256x256 images"
+            )
+        num_classes, train_set, val_set = build_dataset(
+            data_path="./imagenet",
+            final_reso=FLAGS.image_size,
+            hflip=True,
+            mid_reso=1.125,
+        )
+    elif FLAGS.dataset == "lsun":
+        if FLAGS.image_size not in [32, 64]:
+            raise ValueError("LSUN only supports 32x32 or 64x64 images")
+        classes = [
+            "bedroom_train"
+        ]  # Other classes: "church_outdoor_train", "classroom_train", "dining_room_train", "kitchen_train", "living_room_train"
+        num_classes = len(classes)
+        train_set = datasets.LSUN(
+            root="./data",
+            classes=classes,
+            transform=transforms.Compose(
+                [
+                    transforms.Resize(FLAGS.image_size),
+                    transforms.CenterCrop(FLAGS.image_size),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                ]
+            ),
+        )
+    else:
+        raise ValueError(f"Unknown dataset {FLAGS.dataset}")
 
     dataloader = torch.utils.data.DataLoader(
         train_set,
@@ -130,7 +161,7 @@ def train(argv):
     if FLAGS.image_size == 64:
         num_heads = 4
         num_head_channels = 64
-        attention_resolutions = "32,16,8"
+        attention_resolutions = "16"
         use_scale_shift_norm = True
         resblock_updown = False
         num_res_blocks = 3
@@ -141,12 +172,22 @@ def train(argv):
         use_scale_shift_norm = True
         resblock_updown = False
         num_res_blocks = 2
-    else:
+    elif FLAGS.image_size == 128:
         num_heads = 4
-        num_head_channels = 64
+        num_head_channels = 128
         attention_resolutions = "16"
         use_scale_shift_norm = True
-        resblock_updown = True
+        resblock_updown = False
+        num_res_blocks = 3
+    elif FLAGS.image_size == 256:
+        num_heads = 4
+        num_head_channels = 256
+        attention_resolutions = "16"
+        use_scale_shift_norm = True
+        resblock_updown = False
+        num_res_blocks = 3
+    else:
+        raise ValueError(f"Unknown image size {FLAGS.image_size}")
 
     net_model = UNetModelWrapper(
         dim=(3, FLAGS.image_size, FLAGS.image_size),
