@@ -46,6 +46,7 @@ flags.DEFINE_float("ema_decay", 0.9999, help="ema decay rate")
 flags.DEFINE_bool("parallel", False, help="multi gpu training")
 flags.DEFINE_integer("image_size", 32, help="image size")
 flags.DEFINE_string("dataset", "imagenet", help="dataset")
+flags.DEFINE_list("class_indices", None, help="class indices")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -123,6 +124,7 @@ def train(argv):
             final_reso=FLAGS.image_size,
             hflip=True,
             mid_reso=1.125,
+            class_indices=FLAGS.class_indices,
         )
     elif FLAGS.dataset == "lsun":
         if FLAGS.image_size not in [32, 64]:
