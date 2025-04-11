@@ -83,7 +83,7 @@ def generate_samples(
                 0, num_classes, (num_samples,), device=device
             )
             # Set first 16 samples to same class (340 = zebra)
-            generated_class_list[:16] = torch.tensor([340], device=device)
+            # generated_class_list[:16] = torch.tensor([340], device=device)
 
             # Use torchdiffeq's odeint with class conditioning
             traj = torchdiffeq.odeint(
