@@ -97,6 +97,9 @@ def train(argv):
     if FLAGS.save_dir is None:
         FLAGS.save_dir = f"./results/{FLAGS.model}/"
 
+    if FLAGS.class_indices is not None:
+        FLAGS.class_indices = [int(i) for i in FLAGS.class_indices]
+
     # DATASETS/DATALOADER
     if FLAGS.dataset == "cifar10":
         if FLAGS.image_size != 32:
