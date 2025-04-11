@@ -285,16 +285,24 @@ def train(argv):
     print(f"Saved flags to {flags_path}")
 
     for step in range(FLAGS.total_steps):
+        if FLAGS.debug:
+            print(f"Step {step} of {FLAGS.total_steps}")
         optim.zero_grad()
         x1, y = next(datalooper)
         x1 = x1.to(device)
         y = y.to(device) if FLAGS.class_conditional else None
         x0 = torch.randn_like(x1)
+        if FLAGS.debug:
+            print("Shapes before sampling:")
+            print(f"x0: {x0.shape} \n x1: {x1.shape} \n y: {y.shape}")
         t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
         if FLAGS.debug:
-            print("Parameters before forward pass:")
+            print("Shapes after sampling:")
             print(f"t: {t.shape} \n xt: {xt.shape} \n ut: {ut.shape} \n y: {y.shape}")
         vt = net_model(t, xt, y)
+        if FLAGS.debug:
+            print("Shapes after forward pass:")
+            print(f"vt: {vt.shape}")
         loss = torch.mean((vt - ut) ** 2)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)  # new
