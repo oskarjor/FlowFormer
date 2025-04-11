@@ -285,6 +285,7 @@ def train(argv):
     print(f"Saved flags to {flags_path}")
 
     for step in range(FLAGS.total_steps):
+        print(f"Step {step} of {FLAGS.total_steps}")
         if FLAGS.debug:
             print(f"Step {step} of {FLAGS.total_steps}")
         optim.zero_grad()
