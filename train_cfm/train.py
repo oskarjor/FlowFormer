@@ -47,6 +47,7 @@ flags.DEFINE_bool("parallel", False, help="multi gpu training")
 flags.DEFINE_integer("image_size", 32, help="image size")
 flags.DEFINE_string("dataset", "imagenet", help="dataset")
 flags.DEFINE_list("class_indices", None, help="class indices")
+flags.DEFINE_bool("debug", False, help="debug mode")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -290,6 +291,9 @@ def train(argv):
         y = y.to(device) if FLAGS.class_conditional else None
         x0 = torch.randn_like(x1)
         t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
+        if FLAGS.debug:
+            print("Parameters before forward pass:")
+            print(f"t: {t.shape} \n xt: {xt.shape} \n ut: {ut.shape} \n y: {y.shape}")
         vt = net_model(t, xt, y)
         loss = torch.mean((vt - ut) ** 2)
         loss.backward()
