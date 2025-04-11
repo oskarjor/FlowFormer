@@ -130,6 +130,9 @@ def train(argv):
             mid_reso=1.125,
             class_indices=FLAGS.class_indices,
         )
+        if FLAGS.debug:
+            print(f"Train set: {train_set.class_to_idx}")
+            print(f"Train set: {train_set.classes}")
     elif FLAGS.dataset == "lsun":
         if FLAGS.image_size not in [32, 64]:
             raise ValueError("LSUN only supports 32x32 or 64x64 images")
