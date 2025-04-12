@@ -132,7 +132,6 @@ def train(argv):
         )
         if FLAGS.debug:
             print(f"Train set: {train_set.class_to_idx}")
-            print(f"Train set: {train_set.classes}")
     elif FLAGS.dataset == "lsun":
         if FLAGS.image_size not in [32, 64]:
             raise ValueError("LSUN only supports 32x32 or 64x64 images")
@@ -288,7 +287,6 @@ def train(argv):
     print(f"Saved flags to {flags_path}")
 
     for step in range(FLAGS.total_steps):
-        print(f"Step {step} of {FLAGS.total_steps}")
         if FLAGS.debug:
             print(f"Step {step} of {FLAGS.total_steps}")
         optim.zero_grad()

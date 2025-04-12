@@ -57,23 +57,36 @@ def build_dataset(
     )
 
     # Filter classes if indices are provided
-    # BUG: This is not working as expected. It is likely giving out of memory errors.
-    #      This can be fixed in the DatasetFolder class.
     if class_indices is not None:
         print(f"Filtering classes: {class_indices}")
         # Get the class names in order
         idx_to_class = {v: k for k, v in train_set.class_to_idx.items()}
         selected_classes = [idx_to_class[i] for i in class_indices]
         print(f"Selecting train classes: {selected_classes}")
+
+        # Create new class mappings
+        new_class_to_idx = {cls: idx for idx, cls in enumerate(selected_classes)}
+        new_classes = selected_classes
+
+        # Filter samples and remap class indices
         train_set.samples = [
-            (p, c)
+            (p, new_class_to_idx[train_set.classes[c]])
             for p, c in train_set.samples
             if train_set.classes[c] in selected_classes
         ]
-        print(f"Filtered train set: {len(train_set.samples)}")
         val_set.samples = [
-            (p, c) for p, c in val_set.samples if val_set.classes[c] in selected_classes
+            (p, new_class_to_idx[val_set.classes[c]])
+            for p, c in val_set.samples
+            if val_set.classes[c] in selected_classes
         ]
+
+        # Update class mappings
+        train_set.class_to_idx = new_class_to_idx
+        train_set.classes = new_classes
+        val_set.class_to_idx = new_class_to_idx
+        val_set.classes = new_classes
+
+        print(f"Filtered train set: {len(train_set.samples)}")
         print(f"Filtered val set: {len(val_set.samples)}")
         num_classes = len(class_indices)
     else:
