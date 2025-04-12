@@ -60,30 +60,21 @@ def build_dataset(
     # BUG: This is not working as expected. It is likely giving out of memory errors.
     #      This can be fixed in the DatasetFolder class.
     if class_indices is not None:
+        print(f"Filtering classes: {class_indices}")
         # Get the class names in order
-        class_names = sorted(train_set.classes)
-        # Filter to only include specified classes
-        selected_classes = [class_names[i] for i in class_indices]
-
-        # Filter train set
-        train_indices = [
-            i
-            for i, (_, class_idx) in enumerate(train_set.samples)
-            if train_set.classes[class_idx] in selected_classes
+        idx_to_class = {v: k for k, v in train_set.class_to_idx.items()}
+        selected_classes = [idx_to_class[i] for i in class_indices]
+        print(f"Selecting train classes: {selected_classes}")
+        train_set.samples = [
+            (p, c)
+            for p, c in train_set.samples
+            if train_set.classes[c] in selected_classes
         ]
-        train_set.samples = [train_set.samples[i] for i in train_indices]
-        train_set.targets = [train_set.targets[i] for i in train_indices]
-
-        # Filter val set
-        val_indices = [
-            i
-            for i, (_, class_idx) in enumerate(val_set.samples)
-            if val_set.classes[class_idx] in selected_classes
+        print(f"Filtered train set: {len(train_set.samples)}")
+        val_set.samples = [
+            (p, c) for p, c in val_set.samples if val_set.classes[c] in selected_classes
         ]
-        val_set.samples = [val_set.samples[i] for i in val_indices]
-        val_set.targets = [val_set.targets[i] for i in val_indices]
-
-        # Update number of classes
+        print(f"Filtered val set: {len(val_set.samples)}")
         num_classes = len(class_indices)
     else:
         num_classes = 1000
