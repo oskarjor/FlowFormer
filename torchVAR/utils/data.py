@@ -57,6 +57,8 @@ def build_dataset(
     )
 
     # Filter classes if indices are provided
+    # BUG: This is not working as expected. It is likely giving out of memory errors.
+    #      This can be fixed in the DatasetFolder class.
     if class_indices is not None:
         # Get the class names in order
         class_names = sorted(train_set.classes)
