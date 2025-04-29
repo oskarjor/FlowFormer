@@ -12,9 +12,10 @@ import torch
 from absl import app, flags
 from torchdyn.core import NeuralODE
 from torchvision import datasets, transforms
+from torchvision.transforms import InterpolationMode
 from utils_cifar import ema, generate_samples, infiniteloop
 
-from torchVAR.utils.data import build_sr_dataset
+from torchVAR.utils.data import build_SR_dataset
 
 from torchcfm.conditional_flow_matching import (
     ConditionalFlowMatcher,
@@ -108,16 +109,31 @@ def train(argv):
             raise ValueError(
                 "Imagenet only supports 32x32, 64x64, 128x128, 256x256 images"
             )
-        num_classes, train_set, val_set = build_sr_dataset(
+        num_classes, train_set, val_set = build_SR_dataset(
             data_path="./imagenet",
-            train_reso=FLAGS.pre_image_size,
-            target_reso=FLAGS.post_image_size,
-            mid_reso=1.125,
+            pre_image_size=FLAGS.pre_image_size,
+            post_image_size=FLAGS.post_image_size,
             class_indices=FLAGS.class_indices,
         )
 
         if FLAGS.debug:
             print(f"Train set: {train_set.class_to_idx}")
+    elif FLAGS.dataset == "cifar10":
+        if FLAGS.image_size != 32:
+            raise ValueError("CIFAR10 only supports 32x32 images")
+        num_classes = 10
+        train_set = datasets.CIFAR10(
+            root="./data",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                ]
+            ),
+        )
     else:
         raise ValueError(f"Unknown dataset {FLAGS.dataset}")
 
@@ -344,39 +360,26 @@ def train(argv):
 
 
 def demo(argv):
-    num_classes, train_set, val_set = build_sr_dataset(
+    train_set, _ = build_SR_dataset(
         data_path="./imagenet",
-        train_reso=FLAGS.pre_image_size,
-        target_reso=FLAGS.post_image_size,
-        mid_reso=1.125,
-        class_indices=FLAGS.class_indices,
+        pre_image_size=FLAGS.pre_image_size,
+        post_image_size=FLAGS.post_image_size,
     )
 
-    dataloader = torch.utils.data.DataLoader(
-        train_set,
-        batch_size=1,
-        shuffle=True,
-        num_workers=1,
-        drop_last=True,
-    )
-
-    # Show first training image
-    first_image, first_target = next(iter(dataloader))
-    print(f"First image shape: {first_image.shape}")
-    print(f"First target shape: {first_target.shape}")
+    first_sample, first_target, _ = train_set[0]
 
     import matplotlib.pyplot as plt
 
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
     plt.imshow(
-        first_image.permute(1, 2, 0).clip(-1, 1) * 0.5 + 0.5
+        first_sample.permute(1, 2, 0).clip(-1, 1) * 0.5 + 0.5
     )  # Denormalize from [-1,1] to [0,1]
     plt.title("Input (Low Resolution)")
     plt.subplot(1, 2, 2)
     plt.imshow(first_target.permute(1, 2, 0).clip(-1, 1) * 0.5 + 0.5)
     plt.title("Target (High Resolution)")
-    plt.savefig(f"{FLAGS.save_dir}/demo.png")
+    plt.show()
 
 
 if __name__ == "__main__":
