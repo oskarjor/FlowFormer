@@ -351,8 +351,19 @@ def demo(argv):
         mid_reso=1.125,
         class_indices=FLAGS.class_indices,
     )
+
+    dataloader = torch.utils.data.DataLoader(
+        train_set,
+        batch_size=1,
+        shuffle=True,
+        num_workers=1,
+        drop_last=True,
+    )
+
+    datalooper = infiniteloop(dataloader)
     # Show first training image
-    first_image, first_target = train_set[0]
+    first_image, first_target = next(datalooper)
+
     print(f"First image shape: {first_image.shape}")
     print(f"First target shape: {first_target.shape}")
 
