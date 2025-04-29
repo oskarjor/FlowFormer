@@ -15,16 +15,15 @@
 module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
-export WANDB_API_KEY=$(cat ~/.wandb_api_key)
+export WANDB_API_KEY=$(cat ~/FlowFormer/.wandb_api_key)
 
 python train_cfm/train.py \
 	--batch_size=512 \
 	--total_steps=200000 \
-	--model="otcfm" \
+	--model="fm" \
 	--save_dir="./results/otcfm/$SLURM_JOB_ID/" \
 	--image_size=32 \
-	--wandb_name="32x32_otcfm" \
 	--wandb_project="flowformer" \
 	--wandb_entity="oskarjor" \
 	--use_wandb=True \
-	--class_conditional=True
+	--class_conditional=False
