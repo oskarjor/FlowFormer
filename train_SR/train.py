@@ -367,7 +367,7 @@ def demo(argv):
     plt.subplot(1, 2, 2)
     plt.imshow(first_target.permute(1, 2, 0).clip(-1, 1) * 0.5 + 0.5)
     plt.title("Target (High Resolution)")
-    plt.show()
+    plt.savefig(f"{FLAGS.save_dir}/demo.png")
 
 
 if __name__ == "__main__":
