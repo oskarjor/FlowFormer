@@ -16,7 +16,7 @@ module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
 pwd
-export WANDB_API_KEY=$(cat ~/.wandb_api_key)
+export WANDB_API_KEY=$(cat ~/FlowFormer/.wandb_api_key)
 
 python train_SR/train.py \
 	--batch_size=128 \
