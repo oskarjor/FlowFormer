@@ -360,10 +360,8 @@ def demo(argv):
         drop_last=True,
     )
 
-    datalooper = infiniteloop(dataloader)
     # Show first training image
-    first_image, first_target = next(datalooper)
-
+    first_image, first_target = next(iter(dataloader))
     print(f"First image shape: {first_image.shape}")
     print(f"First target shape: {first_target.shape}")
 
