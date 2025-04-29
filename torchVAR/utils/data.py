@@ -113,17 +113,17 @@ def build_sr_dataset(
     train_aug, target_train_aug = (
         [
             transforms.Resize(
-                mid_reso, interpolation=InterpolationMode.LANCZOS
+                mid_reso, interpolation=InterpolationMode.BICUBIC
             ),  # transforms.Resize: resize the shorter edge to mid_reso
             transforms.RandomCrop((target_reso, target_reso)),
             transforms.ToTensor(),
             normalize_01_into_pm1,
-            transforms.Resize(train_reso, interpolation=InterpolationMode.LANCZOS),
+            transforms.Resize(train_reso, interpolation=InterpolationMode.BICUBIC),
             transforms.Resize(target_reso, interpolation=InterpolationMode.NEAREST),
         ],
         [
             transforms.Resize(
-                mid_reso, interpolation=InterpolationMode.LANCZOS
+                mid_reso, interpolation=InterpolationMode.BICUBIC
             ),  # transforms.Resize: resize the shorter edge to mid_reso
             transforms.CenterCrop((target_reso, target_reso)),
             transforms.ToTensor(),
@@ -136,17 +136,17 @@ def build_sr_dataset(
     val_aug, target_val_aug = (
         [
             transforms.Resize(
-                mid_reso, interpolation=InterpolationMode.LANCZOS
+                mid_reso, interpolation=InterpolationMode.BICUBIC
             ),  # transforms.Resize: resize the shorter edge to mid_reso
             transforms.CenterCrop((target_reso, target_reso)),
             transforms.ToTensor(),
             normalize_01_into_pm1,
-            transforms.Resize(train_reso, interpolation=InterpolationMode.LANCZOS),
+            transforms.Resize(train_reso, interpolation=InterpolationMode.BICUBIC),
             transforms.Resize(target_reso, interpolation=InterpolationMode.NEAREST),
         ],
         [
             transforms.Resize(
-                mid_reso, interpolation=InterpolationMode.LANCZOS
+                mid_reso, interpolation=InterpolationMode.BICUBIC
             ),  # transforms.Resize: resize the shorter edge to mid_reso
             transforms.CenterCrop((target_reso, target_reso)),
             transforms.ToTensor(),
