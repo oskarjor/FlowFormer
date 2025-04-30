@@ -144,15 +144,13 @@ def build_SR_dataset(
     mid_reso = round(
         mid_reso * post_image_size
     )  # first resize to mid_reso, then crop to final_reso
-    train_pre_aug = (
+    train_pre_aug, val_pre_aug = (
         [
             transforms.Resize(
                 mid_reso, interpolation=InterpolationMode.LANCZOS
             ),  # transforms.Resize: resize the shorter edge to mid_reso
             transforms.RandomCrop((post_image_size, post_image_size)),
         ],
-    )
-    val_pre_aug = (
         [
             transforms.Resize(
                 mid_reso, interpolation=InterpolationMode.LANCZOS
