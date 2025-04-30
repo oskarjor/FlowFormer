@@ -360,6 +360,7 @@ def train(argv):
 
 
 def demo(argv):
+    print("DEMO")
     train_set, _ = build_SR_dataset(
         data_path="./imagenet",
         pre_image_size=FLAGS.pre_image_size,
@@ -367,7 +368,9 @@ def demo(argv):
     )
 
     first_sample, first_target, _ = train_set[0]
+    print(first_sample.shape, first_target.shape)
 
+    print("PLOTTING...")
     import matplotlib.pyplot as plt
 
     plt.figure(figsize=(10, 5))
@@ -379,7 +382,8 @@ def demo(argv):
     plt.subplot(1, 2, 2)
     plt.imshow(first_target.permute(1, 2, 0).clip(-1, 1) * 0.5 + 0.5)
     plt.title("Target (High Resolution)")
-    plt.show()
+    print("SAVING...")
+    plt.savefig("demo.png")
 
 
 if __name__ == "__main__":
