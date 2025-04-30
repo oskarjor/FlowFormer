@@ -125,11 +125,11 @@ class SR_DatasetFolder(DatasetFolder):
         sample = self.loader(path)
         sample = self.pre_transform(sample)
         if self.transform is not None:
-            sample = self.transform(sample)
+            image = self.transform(sample)
         if self.target_transform is not None:
             target = self.target_transform(sample)
 
-        return sample, target, class_idx
+        return image, target, class_idx
 
 
 def build_SR_dataset(
