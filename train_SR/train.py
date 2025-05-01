@@ -135,7 +135,7 @@ def train(argv):
     val_dataloader = torch.utils.data.DataLoader(
         val_set,
         batch_size=FLAGS.batch_size,
-        shuffle=False,
+        shuffle=True,
         num_workers=FLAGS.num_workers,
         drop_last=False,
     )
@@ -307,7 +307,7 @@ def train(argv):
             with torch.no_grad():
                 val_loss = 0
                 recon_loss = 0
-                for step in range(FLAGS.validation_steps):
+                for val_step in range(FLAGS.validation_steps):
                     val_x0, val_x1, val_y = next(val_datalooper)
                     val_x0, val_x1 = val_x0.to(device), val_x1.to(device)
                     val_y = val_y.to(device) if FLAGS.class_conditional else None
@@ -317,34 +317,30 @@ def train(argv):
                     )
                     val_vt = net_model(val_t, val_xt, val_y)
                     val_loss = torch.mean((val_vt - val_ut) ** 2)
-
-                    print(f"Validation Loss: {val_loss.item():.4f}")
-
-                    # generate samples
-                    generated_x1 = generate_samples(
-                        net_model,
-                        FLAGS.parallel,
-                        FLAGS.save_dir,
-                        step,
-                        image_size=FLAGS.post_image_size,
-                        x0=val_x0,
-                        y=val_y,
-                        class_cond=FLAGS.class_conditional,
-                        num_samples=FLAGS.batch_size,
-                        num_classes=num_classes,
-                    )
-
-                    net_model.eval()
-
-                    # calculate the reconstruction loss
-                    recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
-                    print(f"Reconstruction Loss: {recon_loss.item():.4f}")
+                    if val_step == 0:
+                        # generate samples
+                        generated_x1 = generate_samples(
+                            net_model,
+                            FLAGS.parallel,
+                            FLAGS.save_dir,
+                            step,
+                            image_size=FLAGS.post_image_size,
+                            x0=val_x0,
+                            y=val_y,
+                            class_cond=FLAGS.class_conditional,
+                            num_samples=FLAGS.batch_size,
+                            num_classes=num_classes,
+                        )
+                        net_model.eval()
+                        # calculate the reconstruction loss
+                        recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
+                        print(f"Reconstruction Loss: {recon_loss.item():.4f}")
 
                     val_loss += val_loss.item()
-                    recon_loss += recon_loss.item()
 
                 val_loss /= FLAGS.validation_steps
-                recon_loss /= FLAGS.validation_steps
+
+                print(f"Validation Loss: {val_loss.item():.4f}")
 
                 if FLAGS.use_wandb:
                     wandb.log(
