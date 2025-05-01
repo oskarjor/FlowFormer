@@ -52,6 +52,8 @@ def generate_samples(
     num_classes=1000,
     net_="normal",
     num_samples=64,
+    x0=None,
+    y=None,
 ):
     """Save 64 generated images (8 x 8) for sanity check along training.
 
@@ -77,18 +79,23 @@ def generate_samples(
 
     node_ = NeuralODE(model_, solver="euler", sensitivity="adjoint")
     with torch.no_grad():
+        if x0 is None:
+            x0 = torch.randn(num_samples, 3, image_size, image_size, device=device)
         if class_cond:
             # Generate random class labels
-            generated_class_list = torch.randint(
-                0, num_classes, (num_samples,), device=device
-            )
+            if y is None:
+                generated_class_list = torch.randint(
+                    0, num_classes, (num_samples,), device=device
+                )
+            else:
+                generated_class_list = y
             # Set first 16 samples to same class (340 = zebra)
             # generated_class_list[:16] = torch.tensor([340], device=device)
 
             # Use torchdiffeq's odeint with class conditioning
             traj = torchdiffeq.odeint(
                 lambda t, x: model_(t, x, generated_class_list),
-                torch.randn(num_samples, 3, image_size, image_size, device=device),
+                x0,
                 torch.linspace(0, 1, time_steps, device=device),
                 atol=1e-4,
                 rtol=1e-4,
@@ -96,7 +103,7 @@ def generate_samples(
             )
         else:
             traj = node_.trajectory(
-                torch.randn(num_samples, 3, image_size, image_size, device=device),
+                x0,
                 t_span=torch.linspace(0, 1, time_steps, device=device),
             )
 
@@ -106,6 +113,7 @@ def generate_samples(
 
     save_image(traj, savedir + f"{net_}_generated_FM_images_step_{step}.png", nrow=8)
     model.train()
+    return traj
 
 
 def ema(source, target, decay):

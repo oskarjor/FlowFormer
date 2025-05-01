@@ -31,9 +31,6 @@ flags.DEFINE_string("model", "otcfm", help="flow matching model type")
 flags.DEFINE_string("output_dir", "./results/", help="output_directory")
 flags.DEFINE_string("save_dir", None, help="save_directory")
 
-# UNet
-flags.DEFINE_integer("num_channel", 256, help="base channel of UNet")
-
 # Training
 flags.DEFINE_float("lr", 2e-4, help="target learning rate")  # TRY 2e-4
 flags.DEFINE_float("grad_clip", 1.0, help="gradient norm clipping")
@@ -64,11 +61,14 @@ flags.DEFINE_integer(
 )
 flags.DEFINE_bool("class_conditional", False, help="class conditional training")
 
-# Add these with your other flags in train.py
+# wandb
 flags.DEFINE_bool("use_wandb", True, help="whether to use wandb logging")
 flags.DEFINE_string("wandb_project", "flowformer", help="wandb project name")
 flags.DEFINE_string("wandb_entity", None, help="wandb entity/username")
 flags.DEFINE_string("wandb_name", None, help="wandb run name")
+
+# validation
+flags.DEFINE_integer("validation_steps", 100, help="number of validation steps")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -118,22 +118,6 @@ def train(argv):
 
         if FLAGS.debug:
             print(f"Train set: {train_set.class_to_idx}")
-    elif FLAGS.dataset == "cifar10":
-        if FLAGS.image_size != 32:
-            raise ValueError("CIFAR10 only supports 32x32 images")
-        num_classes = 10
-        train_set = datasets.CIFAR10(
-            root="./data",
-            train=True,
-            download=True,
-            transform=transforms.Compose(
-                [
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                ]
-            ),
-        )
     else:
         raise ValueError(f"Unknown dataset {FLAGS.dataset}")
 
@@ -147,42 +131,34 @@ def train(argv):
 
     datalooper = infiniteloop(dataloader)
 
+    val_dataloader = torch.utils.data.DataLoader(
+        val_set,
+        batch_size=FLAGS.batch_size,
+        shuffle=False,
+        num_workers=FLAGS.num_workers,
+        drop_last=False,
+    )
+
+    val_datalooper = infiniteloop(val_dataloader)
+
     # MODELS
-    if FLAGS.image_size == 64:
+    if FLAGS.pre_image_size == 32 and FLAGS.post_image_size == 64:
         num_heads = 4
         num_head_channels = 64
         attention_resolutions = "16"
         use_scale_shift_norm = True
         resblock_updown = False
-        num_res_blocks = 3
-    elif FLAGS.image_size == 32:
-        num_heads = 4
-        num_head_channels = 32
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
         num_res_blocks = 2
-    elif FLAGS.image_size == 128:
-        num_heads = 4
-        num_head_channels = 128
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
-        num_res_blocks = 3
-    elif FLAGS.image_size == 256:
-        num_heads = 4
-        num_head_channels = 256
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
-        num_res_blocks = 3
+        num_channel = 128
     else:
-        raise ValueError(f"Unknown image size {FLAGS.image_size}")
+        raise ValueError(
+            f"Unknown image size: {FLAGS.pre_image_size}->{FLAGS.post_image_size}"
+        )
 
     net_model = UNetModelWrapper(
-        dim=(3, FLAGS.image_size, FLAGS.image_size),
+        dim=(3, FLAGS.post_image_size, FLAGS.post_image_size),
         num_res_blocks=num_res_blocks,
-        num_channels=FLAGS.num_channel,
+        num_channels=num_channel,
         channel_mult=None,
         num_heads=num_heads,
         num_head_channels=num_head_channels,
@@ -272,10 +248,10 @@ def train(argv):
         if FLAGS.debug:
             print(f"Step {step} of {FLAGS.total_steps}")
         optim.zero_grad()
-        x1, y = next(datalooper)
+        x0, x1, y = next(datalooper)
+        x0 = x0.to(device)
         x1 = x1.to(device)
         y = y.to(device) if FLAGS.class_conditional else None
-        x0 = torch.randn_like(x1)
         if FLAGS.debug:
             print("Shapes before sampling:")
             print(f"x0: {x0.shape} \n x1: {x1.shape} \n y: {y.shape}")
@@ -325,38 +301,56 @@ def train(argv):
 
         # sample and Saving the weights
         if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
-            normal_samples = generate_samples(
-                net_model,
-                FLAGS.parallel,
-                FLAGS.save_dir,
-                step,
-                time_steps=100,
-                class_cond=FLAGS.class_conditional,
-                num_classes=num_classes,
-                net_="normal",
-            )
-            ema_samples = generate_samples(
-                ema_model,
-                FLAGS.parallel,
-                FLAGS.save_dir,
-                step,
-                time_steps=100,
-                class_cond=FLAGS.class_conditional,
-                num_classes=num_classes,
-                net_="ema",
-            )
+            # Validate on a batch from validation set
+            net_model.eval()
+            with torch.no_grad():
+                val_loss = 0
+                recon_loss = 0
+                for step in range(FLAGS.validation_steps):
+                    val_x0, val_x1, val_y = next(val_datalooper)
+                    val_x0, val_x1 = val_x0.to(device), val_x1.to(device)
+                    val_y = val_y.to(device) if FLAGS.class_conditional else None
 
-            torch.save(
-                {
-                    "net_model": net_model.state_dict(),
-                    "ema_model": ema_model.state_dict(),
-                    "sched": sched.state_dict(),
-                    "optim": optim.state_dict(),
-                    "step": step,
-                },
-                FLAGS.save_dir
-                + f"{FLAGS.model}_{FLAGS.image_size}x{FLAGS.image_size}_weights_step_{step}.pt",
-            )
+                    val_t, val_xt, val_ut = FM.sample_location_and_conditional_flow(
+                        val_x0, val_x1
+                    )
+                    val_vt = net_model(val_t, val_xt, val_y)
+                    val_loss = torch.mean((val_vt - val_ut) ** 2)
+
+                    print(f"Validation Loss: {val_loss.item():.4f}")
+
+                    # generate samples
+                    generated_x1 = generate_samples(
+                        net_model,
+                        FLAGS.parallel,
+                        FLAGS.save_dir,
+                        step,
+                        x0=val_x0,
+                        y=val_y,
+                    )
+
+                    net_model.eval()
+
+                    # calculate the reconstruction loss
+                    recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
+                    print(f"Reconstruction Loss: {recon_loss.item():.4f}")
+
+                    val_loss += val_loss.item()
+                    recon_loss += recon_loss.item()
+
+                val_loss /= FLAGS.validation_steps
+                recon_loss /= FLAGS.validation_steps
+
+                if FLAGS.use_wandb:
+                    wandb.log(
+                        {
+                            "val/loss": val_loss,
+                            "val/step": step,
+                            "val/recon_loss": recon_loss,
+                        }
+                    )
+
+            net_model.train()
 
 
 def demo(argv):
@@ -386,6 +380,39 @@ def demo(argv):
     plt.savefig("demo.png")
 
 
+def check_model_size(argv):
+    num_heads = 4
+    num_head_channels = 64
+    attention_resolutions = "16"
+    use_scale_shift_norm = True
+    resblock_updown = False
+    num_res_blocks = 2
+    num_channel = 128
+    num_classes = 1000
+
+    net_model = UNetModelWrapper(
+        dim=(3, FLAGS.post_image_size, FLAGS.post_image_size),
+        num_res_blocks=num_res_blocks,
+        num_channels=num_channel,
+        channel_mult=None,
+        num_heads=num_heads,
+        num_head_channels=num_head_channels,
+        attention_resolutions=attention_resolutions,
+        use_scale_shift_norm=use_scale_shift_norm,
+        resblock_updown=resblock_updown,
+        dropout=0.1,
+        class_cond=FLAGS.class_conditional,
+        num_classes=num_classes,
+        use_new_attention_order=True,
+        use_fp16=False,
+    ).to(device)
+
+    model_size = 0
+    for param in net_model.parameters():
+        model_size += param.data.nelement()
+    print("Model params: %.2f M" % (model_size / 1024 / 1024))
+
+
 if __name__ == "__main__":
-    app.run(demo)
+    app.run(check_model_size)
     # app.run(train)
