@@ -330,6 +330,7 @@ def train(argv):
                         step,
                         x0=val_x0,
                         y=val_y,
+                        class_cond=FLAGS.class_conditional,
                     )
 
                     net_model.eval()
