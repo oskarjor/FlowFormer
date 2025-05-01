@@ -127,5 +127,5 @@ def ema(source, target, decay):
 
 def infiniteloop(dataloader):
     while True:
-        for x, y in iter(dataloader):
-            yield x, y
+        for x0, x1, y in iter(dataloader):
+            yield x0, x1, y
