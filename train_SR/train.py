@@ -109,7 +109,8 @@ def train(argv):
             raise ValueError(
                 "Imagenet only supports 32x32, 64x64, 128x128, 256x256 images"
             )
-        num_classes, train_set, val_set = build_SR_dataset(
+        num_classes = 1000
+        train_set, val_set = build_SR_dataset(
             data_path="./imagenet",
             pre_image_size=FLAGS.pre_image_size,
             post_image_size=FLAGS.post_image_size,
