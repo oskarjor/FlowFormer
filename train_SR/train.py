@@ -28,7 +28,7 @@ from torchcfm.models.unet.unet import UNetModelWrapper
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("model", "otcfm", help="flow matching model type")
-flags.DEFINE_string("output_dir", "./results/", help="output_directory")
+flags.DEFINE_string("output_dir", "./results/SR/", help="output_directory")
 flags.DEFINE_string("save_dir", None, help="save_directory")
 
 # Training
@@ -98,14 +98,14 @@ def train(argv):
     start_time = time.time()
 
     if FLAGS.save_dir is None:
-        FLAGS.save_dir = f"./results/{FLAGS.model}/"
+        FLAGS.save_dir = f"./results/SR/{FLAGS.model}/"
 
     if FLAGS.class_indices is not None:
         FLAGS.class_indices = [int(i) for i in FLAGS.class_indices]
 
     # DATASETS/DATALOADER
     if FLAGS.dataset == "imagenet":
-        if FLAGS.image_size not in [32, 64, 128, 256]:
+        if FLAGS.post_image_size not in [32, 64, 128, 256]:
             raise ValueError(
                 "Imagenet only supports 32x32, 64x64, 128x128, 256x256 images"
             )
@@ -184,7 +184,7 @@ def train(argv):
                 wandb.login(key=api_key)
                 run_name = (
                     FLAGS.wandb_name
-                    or f"cfm_{FLAGS.model}_{FLAGS.image_size}x{FLAGS.image_size}_{os.environ.get('SLURM_JOB_ID', 'local')}"
+                    or f"SR_{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_{os.environ.get('SLURM_JOB_ID', 'local')}"
                 )
 
                 wandb.init(
