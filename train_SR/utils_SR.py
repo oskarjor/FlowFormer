@@ -82,8 +82,6 @@ def generate_samples(
         if x0 is None:
             x0 = torch.randn(num_samples, 3, image_size, image_size, device=device)
         if class_cond:
-            print("class_cond")
-            print(y)
             # Generate random class labels
             if y is None:
                 generated_class_list = torch.randint(
@@ -104,7 +102,6 @@ def generate_samples(
                 method="dopri5",
             )
         else:
-            print("no class_cond")
             traj = node_.trajectory(
                 x0,
                 t_span=torch.linspace(0, 1, time_steps, device=device),
