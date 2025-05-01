@@ -414,5 +414,5 @@ def check_model_size(argv):
 
 
 if __name__ == "__main__":
-    app.run(check_model_size)
-    # app.run(train)
+    # app.run(check_model_size)
+    app.run(train)
