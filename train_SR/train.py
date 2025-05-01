@@ -320,6 +320,8 @@ def train(argv):
 
                     print(f"Validation Loss: {val_loss.item():.4f}")
 
+                    print(val_y)
+
                     # generate samples
                     generated_x1 = generate_samples(
                         net_model,
