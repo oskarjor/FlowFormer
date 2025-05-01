@@ -13,7 +13,7 @@ from absl import app, flags
 from torchdyn.core import NeuralODE
 from torchvision import datasets, transforms
 from torchvision.transforms import InterpolationMode
-from train_SR.utils import ema, generate_samples, infiniteloop
+from utils_SR import ema, generate_samples, infiniteloop
 
 from torchVAR.utils.data import build_SR_dataset
 
