@@ -87,7 +87,7 @@ def sample_var(argv):
     if FLAGS.debug:
         print(class_labels)
         print(type(class_labels))
-
+    
     class_labels = [int(x) for x in class_labels]
 
     if FLAGS.debug:

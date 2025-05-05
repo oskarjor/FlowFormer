@@ -19,15 +19,18 @@ try:
     from flash_attn.ops.layer_norm import dropout_add_layer_norm
     from flash_attn.ops.fused_dense import fused_mlp_func
 except ImportError:
+    print("FlashAttn not found")
     pass
 # automatically import faster attention implementations
 try:
     from xformers.ops import memory_efficient_attention
 except ImportError:
+    print("Xformers not found")
     pass
 try:
     from flash_attn import flash_attn_func  # qkv: BLHc, ret: BLHcq
 except ImportError:
+    print("FlashAttn not found")
     pass
 try:
     from torch.nn.functional import (
