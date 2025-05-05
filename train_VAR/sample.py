@@ -30,6 +30,7 @@ flags.DEFINE_list(
 )
 flags.DEFINE_bool("more_smooth", False, help="more smooth")
 flags.DEFINE_integer("num_samples_per_class", 50, help="number of samples per class")
+flags.DEFINE_bool("debug", False, help="debug")
 
 
 def sample_var(argv):
@@ -83,7 +84,16 @@ def sample_var(argv):
     more_smooth = FLAGS.more_smooth
     num_samples_per_class = FLAGS.num_samples_per_class
 
+    if FLAGS.debug:
+        print(class_labels)
+        print(type(class_labels))
+
     class_labels = [int(x) for x in class_labels]
+
+    if FLAGS.debug:
+        print(class_labels)
+        print(type(class_labels))
+
     expanded_class_labels = [
         x for x in class_labels for _ in range(num_samples_per_class)
     ]
