@@ -32,7 +32,7 @@ flags.DEFINE_bool("more_smooth", False, help="more smooth")
 flags.DEFINE_integer("num_samples_per_class", 50, help="number of samples per class")
 
 
-def sample_var():
+def sample_var(argv):
     MODEL_DEPTH = FLAGS.model_depth
     assert MODEL_DEPTH in {16, 20, 24, 30}
 
