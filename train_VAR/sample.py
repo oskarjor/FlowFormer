@@ -82,8 +82,10 @@ def sample_var(argv):
     class_labels = FLAGS.class_labels
     more_smooth = FLAGS.more_smooth
     num_samples_per_class = FLAGS.num_samples_per_class
+
+    class_labels = [int(x) for x in class_labels]
     expanded_class_labels = [
-        int(x) for x in class_labels for _ in range(num_samples_per_class)
+        x for x in class_labels for _ in range(num_samples_per_class)
     ]
 
     # seed
