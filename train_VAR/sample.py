@@ -87,7 +87,7 @@ def sample_var(argv):
     if FLAGS.debug:
         print(class_labels)
         print(type(class_labels))
-    
+
     class_labels = [int(x) for x in class_labels]
 
     if FLAGS.debug:
@@ -131,7 +131,9 @@ def sample_var(argv):
     # save images
     os.makedirs(FLAGS.output_dir, exist_ok=True)
     for i, recon_B3HW in enumerate(recon_B3HW):
-        PImage.fromarray(recon_B3HW.mul_(255).cpu().numpy().astype(np.uint8)).save(
+        PImage.fromarray(
+            recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
+        ).save(
             osp.join(
                 FLAGS.output_dir,
                 f"class_{expanded_class_labels[i]}_image_{i % num_samples_per_class}.png",
