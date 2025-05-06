@@ -299,6 +299,19 @@ def train(argv):
 
         # sample and Saving the weights
         if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
+            # Save the model
+            torch.save(
+                {
+                    "net_model": net_model.state_dict(),
+                    "ema_model": ema_model.state_dict(),
+                    "sched": sched.state_dict(),
+                    "optim": optim.state_dict(),
+                    "step": step,
+                },
+                FLAGS.save_dir
+                + f"{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_weights_step_{step}.pt",
+            )
+
             # Validate on a batch from validation set
             net_model.eval()
             with torch.no_grad():
