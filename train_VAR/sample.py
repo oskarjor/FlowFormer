@@ -31,6 +31,8 @@ flags.DEFINE_list(
 flags.DEFINE_bool("more_smooth", False, help="more smooth")
 flags.DEFINE_integer("num_samples_per_class", 50, help="number of samples per class")
 flags.DEFINE_bool("debug", False, help="debug")
+flags.DEFINE_bool("flash_attn", False, help="flash_attn")
+flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 
 
 def sample_var(argv):
@@ -59,6 +61,8 @@ def sample_var(argv):
             num_classes=1000,
             depth=MODEL_DEPTH,
             shared_aln=False,
+            flash_if_available=FLAGS.flash_attn,
+            fused_if_available=FLAGS.fused_mlp,
         )
 
     # load checkpoints
