@@ -273,29 +273,33 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             if pn in return_sizes:
-                ### OLD METHOD ###
-                # results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)) # OLD: decodes everything to the max image size (i.e. 256x256)
+                if pn == self.patch_nums[-1]:
+                    results.append(
+                        self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+                    )
+                else:
+                    # Get all indices up to current size
+                    ms_idx_Bl = []
+                    cur_patch_start = 0
+                    for i in range(si + 1):
+                        pn_i = self.patch_nums[i]
+                        # Get the indices for this patch size
+                        patch_indices = idx_Bl[
+                            :, cur_patch_start : cur_patch_start + pn_i * pn_i
+                        ]
+                        ms_idx_Bl.append(patch_indices)
+                        cur_patch_start += pn_i * pn_i
 
-                ### NEW METHOD ###
-                # Get all indices up to current size
-                ms_idx_Bl = []
-                cur_patch_start = 0
-                for i in range(si + 1):
-                    pn_i = self.patch_nums[i]
-                    # Get the indices for this patch size
-                    patch_indices = idx_Bl[
-                        :, cur_patch_start : cur_patch_start + pn_i * pn_i
-                    ]
-                    ms_idx_Bl.append(patch_indices)
-                    cur_patch_start += pn_i * pn_i
+                    print(f"ms_idx_Bl: {ms_idx_Bl}")
+                    print(f"ms_idx_Bl[0].shape: {ms_idx_Bl[0].shape}")
 
-                # Use idxBl_to_img to get the image at current patch size
-                results.append(
-                    self.vae_proxy[0]
-                    .idxBl_to_img(ms_idx_Bl, same_shape=False, last_one=True)
-                    .add_(1)
-                    .mul_(0.5)
-                )  # de-normalize, from [-1, 1] to [0, 1]
+                    # Use idxBl_to_img to get the image at current patch size
+                    results.append(
+                        self.vae_proxy[0]
+                        .idxBl_to_img(ms_idx_Bl, same_shape=False, last_one=True)
+                        .add_(1)
+                        .mul_(0.5)
+                    )  # de-normalize, from [-1, 1] to [0, 1]
 
         for b in self.blocks:
             b.attn.kv_caching(False)
