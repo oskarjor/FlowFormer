@@ -149,6 +149,9 @@ def sample_var(argv):
                 print(f"Number of different sizes: {len(recon_B3HW)}")
                 print(f"Expected sizes: {return_sizes}")
             for idx in range(len(return_sizes)):
+                if FLAGS.debug:
+                    print(f"Saving images of size {return_sizes[idx]}")
+                    print(f"recon_B3HW[idx].shape: {recon_B3HW[idx].shape}")
                 images = (
                     recon_B3HW[idx].clone().mul_(255).cpu().numpy().astype(np.uint8)
                 )
@@ -156,7 +159,7 @@ def sample_var(argv):
                 np.save(
                     osp.join(
                         FLAGS.output_dir,
-                        f"class_{class_label}_{num_samples_per_class}_images_{image_size}x{image_size}.npy",
+                        f"class_{class_label}_{num_samples_per_class}_images_{return_sizes[idx]}x{return_sizes[idx]}.npy",
                     ),
                     images,
                 )
