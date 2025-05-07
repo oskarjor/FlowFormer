@@ -98,10 +98,6 @@ def sample_var(argv):
         print(class_labels)
         print(type(class_labels))
 
-    expanded_class_labels = [
-        x for x in class_labels for _ in range(num_samples_per_class)
-    ]
-
     # seed
     torch.manual_seed(seed)
     random.seed(seed)
@@ -116,39 +112,33 @@ def sample_var(argv):
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
 
     # sample
-    B = len(expanded_class_labels)
-    label_B: torch.LongTensor = torch.tensor(expanded_class_labels, device=device)
-    with torch.inference_mode():
-        with torch.autocast(
-            "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
-        ):  # using bfloat16 can be faster
-            recon_B3HW = var.autoregressive_infer_cfg(
-                B=B,
-                label_B=label_B,
-                cfg=cfg,
-                top_k=900,
-                top_p=0.95,
-                g_seed=seed,
-                more_smooth=more_smooth,
-            )
+    for class_label in class_labels:
+        expanded_class_labels = [class_label for _ in range(num_samples_per_class)]
+        B = len(expanded_class_labels)
+        label_B: torch.LongTensor = torch.tensor(expanded_class_labels, device=device)
+        with torch.inference_mode():
+            with torch.autocast(
+                "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
+            ):  # using bfloat16 can be faster
+                recon_B3HW = var.autoregressive_infer_cfg(
+                    B=B,
+                    label_B=label_B,
+                    cfg=cfg,
+                    top_k=900,
+                    top_p=0.95,
+                    g_seed=seed,
+                    more_smooth=more_smooth,
+                )
 
-    # save images
-    os.makedirs(FLAGS.output_dir, exist_ok=True)
-    for i, image in enumerate(recon_B3HW):
-        image = image.clone().mul_(255).cpu().numpy().astype(np.uint8)
-        if FLAGS.debug:
-            print(f"image shape: {image.shape}")
-            print(f"image type: {type(image)}")
-            print(f"image dtype: {image.dtype}")
-            print(f"image min: {image.min()}")
-            print(f"image max: {image.max()}")
-        image = PImage.fromarray(image)
-        image.save(
-            osp.join(
-                FLAGS.output_dir,
-                f"class_{expanded_class_labels[i]}_image_{i % num_samples_per_class}.png",
+            # save images as numpy array
+            images = recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
+            np.save(
+                osp.join(
+                    FLAGS.output_dir,
+                    f"class_{class_label}_{num_samples_per_class}_images.npy",
+                ),
+                images,
             )
-        )
 
 
 if __name__ == "__main__":
