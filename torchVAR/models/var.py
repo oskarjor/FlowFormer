@@ -234,6 +234,7 @@ class VAR(nn.Module):
             b.attn.kv_caching(True)
 
         ms_idx_Bl = []
+        ms_h_BChw = []
         for si, pn in enumerate(self.patch_nums):  # si: i-th segment
             ratio = si / self.num_stages_minus_1
             # last_L = cur_L
@@ -264,6 +265,7 @@ class VAR(nn.Module):
             f_hat, next_token_map = self.vae_quant_proxy[
                 0
             ].get_next_autoregressive_input(si, len(self.patch_nums), f_hat, h_BChw)
+            print(f"f_hat.shape: {f_hat.shape}")
             if si != self.num_stages_minus_1:  # prepare for next stage
                 next_token_map = next_token_map.view(B, self.Cvae, -1).transpose(1, 2)
                 next_token_map = (
@@ -275,12 +277,16 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             ms_idx_Bl.append(idx_Bl)
+            ms_h_BChw.append(h_BChw)
 
-        results = self.vae_proxy[0].idxBl_to_img(
-            ms_idx_Bl, same_shape=False, last_one=False
-        )
-        results = [result.add_(1).mul_(0.5) for result in results]
-        # de-normalize, from [-1, 1] to [0, 1]
+        # results = self.vae_proxy[0].idxBl_to_img(
+        #     ms_idx_Bl, same_shape=False, last_one=False
+        # )
+        # results = [
+        #     result.add_(1).mul_(0.5) for result in results
+        # ]  # de-normalize, from [-1, 1] to [0, 1]
+
+        results = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
 
         for b in self.blocks:
             b.attn.kv_caching(False)
