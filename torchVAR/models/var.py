@@ -182,6 +182,7 @@ class VAR(nn.Module):
         top_k=0,
         top_p=0.0,
         more_smooth=False,
+        return_sizes=[16],
     ) -> torch.Tensor:  # returns reconstructed image (B, 3, H, W) in [0, 1]
         """
         only used for inference, on autoregressive mode
@@ -216,6 +217,8 @@ class VAR(nn.Module):
                 (label_B, torch.full_like(label_B, fill_value=self.num_classes)), dim=0
             )
         )
+
+        results = {}
 
         lvl_pos = self.lvl_embed(self.lvl_1L) + self.pos_1LC
         next_token_map = (
@@ -269,11 +272,12 @@ class VAR(nn.Module):
                     2, 1, 1
                 )  # double the batch sizes due to CFG
 
+            if si in return_sizes:
+                results[si] = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+
         for b in self.blocks:
             b.attn.kv_caching(False)
-        return (
-            self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
-        )  # de-normalize, from [-1, 1] to [0, 1]
+        return results  # de-normalize, from [-1, 1] to [0, 1]
 
     def forward(
         self, label_B: torch.LongTensor, x_BLCv_wo_first_l: torch.Tensor

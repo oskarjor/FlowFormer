@@ -34,7 +34,7 @@ flags.DEFINE_integer("num_samples_per_class", 50, help="number of samples per cl
 flags.DEFINE_bool("debug", False, help="debug")
 flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
-
+flags.DEFINE_list("return_sizes", [16], help="return sizes")
 
 def sample_var(argv):
     # save flags to flags.json
@@ -101,6 +101,7 @@ def sample_var(argv):
         print(type(class_labels))
 
     class_labels = [int(x) for x in class_labels]
+    return_sizes = [int(x) for x in FLAGS.return_sizes]
 
     if FLAGS.debug:
         print(class_labels)
@@ -136,17 +137,19 @@ def sample_var(argv):
                     top_p=0.95,
                     g_seed=seed,
                     more_smooth=more_smooth,
+                    return_sizes=return_sizes,
                 )
 
-            # save images as numpy array
-            images = recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
-            np.save(
-                osp.join(
-                    FLAGS.output_dir,
-                    f"class_{class_label}_{num_samples_per_class}_images.npy",
-                ),
-                images,
-            )
+            for si in return_sizes:
+                images = recon_B3HW[si].clone().mul_(255).cpu().numpy().astype(np.uint8)
+                image_size = images.shape[1]
+                np.save(
+                    osp.join(
+                        FLAGS.output_dir,
+                        f"class_{class_label}_{num_samples_per_class}_images_{image_size}x{image_size}.npy",
+                    ),
+                    images,
+                )
 
 
 if __name__ == "__main__":
