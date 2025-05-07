@@ -114,11 +114,11 @@ class VQVAE(nn.Module):
         for idx_Bl in ms_idx_Bl:
             l = idx_Bl.shape[1]
             pn = round(l**0.5)
-            ms_h_BChw.append(
-                self.quantize.embedding(idx_Bl)
-                .transpose(1, 2)
-                .view(B, self.Cvae, pn, pn)
-            )
+            print(f"pn: {pn}")
+            embedding = self.quantize.embedding(idx_Bl)
+            embedding = embedding.transpose(1, 2)
+            embedding = embedding.view(B, self.Cvae, pn, pn)
+            ms_h_BChw.append(embedding)
         return self.embed_to_img(
             ms_h_BChw=ms_h_BChw, all_to_max_scale=same_shape, last_one=last_one
         )
