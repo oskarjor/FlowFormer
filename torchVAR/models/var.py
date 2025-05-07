@@ -276,12 +276,10 @@ class VAR(nn.Module):
 
             ms_idx_Bl.append(idx_Bl)
 
-        results = (
-            self.vae_proxy[0]
-            .idxBl_to_img(ms_idx_Bl, same_shape=False, last_one=False)
-            .add_(1)
-            .mul_(0.5)
+        results = self.vae_proxy[0].idxBl_to_img(
+            ms_idx_Bl, same_shape=False, last_one=False
         )
+        results = [result.add_(1).mul_(0.5) for result in results]
         # de-normalize, from [-1, 1] to [0, 1]
 
         for b in self.blocks:
