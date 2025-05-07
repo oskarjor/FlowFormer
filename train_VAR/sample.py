@@ -134,10 +134,12 @@ def sample_var(argv):
 
     # save images
     os.makedirs(FLAGS.output_dir, exist_ok=True)
-    for i, recon_B3HW in enumerate(recon_B3HW):
-        PImage.fromarray(
-            recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
-        ).save(
+    for i, image in enumerate(recon_B3HW):
+        if FLAGS.debug:
+            print(image.shape)
+        image = image.clone().mul_(255).cpu().numpy().astype(np.uint8)
+        image = PImage.fromarray(image)
+        image.save(
             osp.join(
                 FLAGS.output_dir,
                 f"class_{expanded_class_labels[i]}_image_{i % num_samples_per_class}.png",
