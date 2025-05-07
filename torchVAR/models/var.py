@@ -277,8 +277,8 @@ class VAR(nn.Module):
                 # results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)) # OLD: decodes everything to the max image size (i.e. 256x256)
 
                 ### NEW METHOD ###
-                # Get all patches up to current size
-                ms_h_BChw = []
+                # Get all indices up to current size
+                ms_idx_Bl = []
                 cur_patch_start = 0
                 for i in range(si + 1):
                     pn_i = self.patch_nums[i]
@@ -286,20 +286,13 @@ class VAR(nn.Module):
                     patch_indices = idx_Bl[
                         :, cur_patch_start : cur_patch_start + pn_i * pn_i
                     ]
-                    # Convert to latent representation
-                    h_i = (
-                        self.vae_quant_proxy[0]
-                        .embedding(patch_indices)
-                        .transpose(1, 2)
-                        .view(B, self.Cvae, pn_i, pn_i)
-                    )
-                    ms_h_BChw.append(h_i)
+                    ms_idx_Bl.append(patch_indices)
                     cur_patch_start += pn_i * pn_i
 
-                # Use embed_to_img with all patches
+                # Use idxBl_to_img to get the image at current patch size
                 results.append(
                     self.vae_proxy[0]
-                    .embed_to_img(ms_h_BChw, all_to_max_scale=False, last_one=True)
+                    .idxBl_to_img(ms_idx_Bl, same_shape=False, last_one=True)
                     .add_(1)
                     .mul_(0.5)
                 )  # de-normalize, from [-1, 1] to [0, 1]
