@@ -273,10 +273,24 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             if pn in return_sizes:
+                ### OLD METHOD ###
                 # results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)) # OLD: decodes everything to the max image size (i.e. 256x256)
-                # Instead of using fhat_to_img, use embed_to_img with all_to_max_scale=False
-                # This will return the image at the current patch size
-                ms_h_BChw = [h_BChw]  # List of tensors at current patch size
+
+                ### NEW METHOD ###
+                # Get all patches up to current size
+                ms_h_BChw = []
+                for i in range(si + 1):
+                    pn_i = self.patch_nums[i]
+                    # Get the latent representation for this patch size
+                    h_i = (
+                        self.vae_quant_proxy[0]
+                        .embedding(idx_Bl[:, : pn_i * pn_i])
+                        .transpose(1, 2)
+                        .view(B, self.Cvae, pn_i, pn_i)
+                    )
+                    ms_h_BChw.append(h_i)
+
+                # Use embed_to_img with all patches
                 results.append(
                     self.vae_proxy[0]
                     .embed_to_img(ms_h_BChw, all_to_max_scale=False, last_one=True)
