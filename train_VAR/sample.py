@@ -145,7 +145,9 @@ def sample_var(argv):
                     more_smooth=more_smooth,
                     return_sizes=return_sizes,
                 )
-
+            if FLAGS.debug:
+                print(f"Number of different sizes: {len(recon_B3HW)}")
+                print(f"Expected sizes: {return_sizes}")
             for idx in range(len(return_sizes)):
                 images = (
                     recon_B3HW[idx].clone().mul_(255).cpu().numpy().astype(np.uint8)
