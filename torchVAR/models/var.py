@@ -233,7 +233,6 @@ class VAR(nn.Module):
         for b in self.blocks:
             b.attn.kv_caching(True)
         for si, pn in enumerate(self.patch_nums):  # si: i-th segment
-            print(f"Processing stage {si} with patch size {pn}x{pn}")
             ratio = si / self.num_stages_minus_1
             # last_L = cur_L
             cur_L += pn * pn
@@ -273,8 +272,7 @@ class VAR(nn.Module):
                     2, 1, 1
                 )  # double the batch sizes due to CFG
 
-            if si in return_sizes:
-                print(f"Adding image of size {si}x{si}")
+            if pn in return_sizes:
                 results.append(
                     self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
                 )  # de-normalize, from [-1, 1] to [0, 1]
