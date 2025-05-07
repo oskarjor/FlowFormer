@@ -5,6 +5,7 @@ import torch, torchvision
 import random
 import numpy as np
 import PIL.Image as PImage, PIL.ImageDraw as PImageDraw
+import json
 
 setattr(
     torch.nn.Linear, "reset_parameters", lambda self: None
@@ -36,6 +37,12 @@ flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 
 
 def sample_var(argv):
+    # save flags to flags.json
+    flags_dict = flags.FLAGS.flag_values_dict()
+    flags_path = os.path.join(FLAGS.output_dir, "flags.json")
+    with open(flags_path, "w") as f:
+        json.dump(flags_dict, f, indent=4)
+
     MODEL_DEPTH = FLAGS.model_depth
     assert MODEL_DEPTH in {16, 20, 24, 30}
 
