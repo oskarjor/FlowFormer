@@ -36,6 +36,7 @@ flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 flags.DEFINE_list("return_sizes", [16], help="return sizes")
 
+
 def sample_var(argv):
     # save flags to flags.json
     os.makedirs(FLAGS.output_dir, exist_ok=True)
@@ -57,6 +58,12 @@ def sample_var(argv):
 
     # build vae, var
     patch_nums = (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+    return_sizes = [int(x) for x in FLAGS.return_sizes]
+
+    assert all(x in patch_nums for x in return_sizes), (
+        f"return_sizes must be a subset of patch_nums: {patch_nums}"
+    )
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if "vae" not in globals() or "var" not in globals():
         vae, var = build_vae_var(
@@ -101,7 +108,6 @@ def sample_var(argv):
         print(type(class_labels))
 
     class_labels = [int(x) for x in class_labels]
-    return_sizes = [int(x) for x in FLAGS.return_sizes]
 
     if FLAGS.debug:
         print(class_labels)
