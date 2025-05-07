@@ -38,6 +38,7 @@ flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 
 def sample_var(argv):
     # save flags to flags.json
+    os.makedirs(FLAGS.output_dir, exist_ok=True)
     flags_dict = flags.FLAGS.flag_values_dict()
     flags_path = os.path.join(FLAGS.output_dir, "flags.json")
     with open(flags_path, "w") as f:
@@ -119,7 +120,6 @@ def sample_var(argv):
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
 
     # sample
-    os.makedirs(FLAGS.output_dir, exist_ok=True)
     for class_label in class_labels:
         expanded_class_labels = [class_label for _ in range(num_samples_per_class)]
         B = len(expanded_class_labels)
