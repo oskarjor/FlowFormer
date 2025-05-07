@@ -220,6 +220,7 @@ class VectorQuantizer2(nn.Module):
             )
             for si, pn in enumerate(self.v_patch_nums):  # from small to large
                 f_hat = F.interpolate(f_hat, size=(pn, pn), mode="bicubic")
+                print(f"si: {si}, pn: {pn}")
                 h_BChw = self.quant_resi[si / (SN - 1)](ms_h_BChw[si])
                 f_hat.add_(h_BChw)
                 if last_one:
