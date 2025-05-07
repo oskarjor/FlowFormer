@@ -136,8 +136,13 @@ def sample_var(argv):
     os.makedirs(FLAGS.output_dir, exist_ok=True)
     for i, image in enumerate(recon_B3HW):
         if FLAGS.debug:
-            print(image.shape)
+            print(f"image shape: {image.shape}")
         image = image.clone().mul_(255).cpu().numpy().astype(np.uint8)
+        if FLAGS.debug:
+            print(f"image type: {type(image)}")
+            print(f"image dtype: {image.dtype}")
+            print(f"image min: {image.min()}")
+            print(f"image max: {image.max()}")
         image = PImage.fromarray(image)
         image.save(
             osp.join(
