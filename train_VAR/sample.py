@@ -155,7 +155,8 @@ def sample_var(argv):
                 images = (
                     recon_B3HW[idx].clone().mul_(255).cpu().numpy().astype(np.uint8)
                 )
-                image_size = images.shape[-1]
+                if FLAGS.debug:
+                    print(f"images.shape: {images.shape}")
                 np.save(
                     osp.join(
                         FLAGS.output_dir,
