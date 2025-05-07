@@ -232,6 +232,8 @@ class VAR(nn.Module):
 
         for b in self.blocks:
             b.attn.kv_caching(True)
+
+        ms_idx_Bl = []
         for si, pn in enumerate(self.patch_nums):  # si: i-th segment
             ratio = si / self.num_stages_minus_1
             # last_L = cur_L
@@ -272,23 +274,13 @@ class VAR(nn.Module):
                     2, 1, 1
                 )  # double the batch sizes due to CFG
 
+            ms_idx_Bl.append(idx_Bl)
             if pn in return_sizes:
                 if pn == self.patch_nums[-1]:
                     results.append(
                         self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
                     )
                 else:
-                    # Get all indices up to current size
-                    ms_idx_Bl = []
-                    cur_patch_start = 0
-                    cur_patch_end = 0
-                    for i in range(self.patch_nums):
-                        cur_patch_end += self.patch_nums[i] * self.patch_nums[i]
-                        ms_idx_Bl.append(idx_Bl[:, cur_patch_start:cur_patch_end])
-                        cur_patch_start = cur_patch_end
-                        if i == pn:
-                            break
-
                     # Use idxBl_to_img to get the image at current patch size
                     results.append(
                         self.vae_proxy[0]
