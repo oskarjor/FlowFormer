@@ -287,6 +287,10 @@ class VAR(nn.Module):
                         patch_indices = idx_Bl[
                             :, cur_patch_start : cur_patch_start + pn_i * pn_i
                         ]
+                        # Reshape to match what the VAE expects
+                        patch_indices = patch_indices.reshape(
+                            B, -1
+                        )  # Ensure it's [B, pn_i*pn_i]
                         ms_idx_Bl.append(patch_indices)
                         cur_patch_start += pn_i * pn_i
 
