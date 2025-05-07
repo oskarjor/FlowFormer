@@ -281,14 +281,13 @@ class VAR(nn.Module):
                     # Get all indices up to current size
                     ms_idx_Bl = []
                     cur_patch_start = 0
-                    for i in range(si + 1):
-                        pn_i = self.patch_nums[i]
-                        # Get the indices for this patch size
-                        patch_indices = idx_Bl[
-                            :, cur_patch_start : cur_patch_start + pn_i * pn_i
-                        ]
-                        ms_idx_Bl.append(patch_indices)
-                        cur_patch_start += pn_i * pn_i
+                    cur_patch_end = 0
+                    for i in range(self.patch_nums):
+                        cur_patch_end += self.patch_nums[i] * self.patch_nums[i]
+                        ms_idx_Bl.append(idx_Bl[:, cur_patch_start:cur_patch_end])
+                        cur_patch_start = cur_patch_end
+                        if i == pn:
+                            break
 
                     # Use idxBl_to_img to get the image at current patch size
                     results.append(
