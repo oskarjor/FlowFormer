@@ -233,6 +233,7 @@ class VAR(nn.Module):
         for b in self.blocks:
             b.attn.kv_caching(True)
         for si, pn in enumerate(self.patch_nums):  # si: i-th segment
+            print(f"Processing stage {si} with patch size {pn}x{pn}")
             ratio = si / self.num_stages_minus_1
             # last_L = cur_L
             cur_L += pn * pn
