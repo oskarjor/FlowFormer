@@ -279,16 +279,22 @@ class VAR(nn.Module):
                 ### NEW METHOD ###
                 # Get all patches up to current size
                 ms_h_BChw = []
+                cur_patch_start = 0
                 for i in range(si + 1):
                     pn_i = self.patch_nums[i]
-                    # Get the latent representation for this patch size
+                    # Get the indices for this patch size
+                    patch_indices = idx_Bl[
+                        :, cur_patch_start : cur_patch_start + pn_i * pn_i
+                    ]
+                    # Convert to latent representation
                     h_i = (
                         self.vae_quant_proxy[0]
-                        .embedding(idx_Bl[:, : pn_i * pn_i])
+                        .embedding(patch_indices)
                         .transpose(1, 2)
                         .view(B, self.Cvae, pn_i, pn_i)
                     )
                     ms_h_BChw.append(h_i)
+                    cur_patch_start += pn_i * pn_i
 
                 # Use embed_to_img with all patches
                 results.append(
