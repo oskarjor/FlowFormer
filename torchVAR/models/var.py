@@ -276,6 +276,9 @@ class VAR(nn.Module):
 
             ms_idx_Bl.append(idx_Bl)
             if pn in return_sizes:
+                print(f"pn: {pn}")
+                print(f"len(ms_idx_Bl): {len(ms_idx_Bl)}")
+                print(f"ms_idx_Bl[-1].shape: {ms_idx_Bl[-1].shape}")
                 if pn == self.patch_nums[-1]:
                     results.append(
                         self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
