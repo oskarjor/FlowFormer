@@ -274,11 +274,13 @@ class VAR(nn.Module):
 
             if si in return_sizes:
                 print(f"Adding image of size {si}x{si}")
-                results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5))
+                results.append(
+                    self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+                )  # de-normalize, from [-1, 1] to [0, 1]
 
         for b in self.blocks:
             b.attn.kv_caching(False)
-        return results  # de-normalize, from [-1, 1] to [0, 1]
+        return results
 
     def forward(
         self, label_B: torch.LongTensor, x_BLCv_wo_first_l: torch.Tensor
