@@ -275,22 +275,14 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             ms_idx_Bl.append(idx_Bl)
-            print(f"pn: {pn}")
-            print(f"len(ms_idx_Bl): {len(ms_idx_Bl)}")
-            print(f"ms_idx_Bl[-1].shape: {ms_idx_Bl[-1].shape}")
-            if pn in return_sizes:
-                if pn == self.patch_nums[-1]:
-                    results.append(
-                        self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
-                    )
-                else:
-                    # Use idxBl_to_img to get the image at current patch size
-                    results.append(
-                        self.vae_proxy[0]
-                        .idxBl_to_img(ms_idx_Bl, same_shape=False, last_one=True)
-                        .add_(1)
-                        .mul_(0.5)
-                    )  # de-normalize, from [-1, 1] to [0, 1]
+
+        results = (
+            self.vae_proxy[0]
+            .idxBl_to_img(ms_idx_Bl, same_shape=False, last_one=False)
+            .add_(1)
+            .mul_(0.5)
+        )
+        # de-normalize, from [-1, 1] to [0, 1]
 
         for b in self.blocks:
             b.attn.kv_caching(False)
