@@ -146,8 +146,10 @@ def sample_var(argv):
                     return_sizes=return_sizes,
                 )
 
-            for index, _ in enumerate(return_sizes):
-                images = recon_B3HW[index].clone().mul_(255).cpu().numpy().astype(np.uint8)
+            for idx in range(len(return_sizes)):
+                images = (
+                    recon_B3HW[idx].clone().mul_(255).cpu().numpy().astype(np.uint8)
+                )
                 image_size = images.shape[1]
                 np.save(
                     osp.join(

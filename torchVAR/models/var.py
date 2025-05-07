@@ -218,7 +218,7 @@ class VAR(nn.Module):
             )
         )
 
-        results = {}
+        results = []
 
         lvl_pos = self.lvl_embed(self.lvl_1L) + self.pos_1LC
         next_token_map = (
@@ -273,7 +273,7 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             if si in return_sizes:
-                results[si] = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+                results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5))
 
         for b in self.blocks:
             b.attn.kv_caching(False)
