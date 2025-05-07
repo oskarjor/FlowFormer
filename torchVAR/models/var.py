@@ -273,8 +273,15 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             if pn in return_sizes:
+                # results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)) # OLD: decodes everything to the max image size (i.e. 256x256)
+                # Instead of using fhat_to_img, use embed_to_img with all_to_max_scale=False
+                # This will return the image at the current patch size
+                ms_h_BChw = [h_BChw]  # List of tensors at current patch size
                 results.append(
-                    self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+                    self.vae_proxy[0]
+                    .embed_to_img(ms_h_BChw, all_to_max_scale=False, last_one=True)
+                    .add_(1)
+                    .mul_(0.5)
                 )  # de-normalize, from [-1, 1] to [0, 1]
 
         for b in self.blocks:
