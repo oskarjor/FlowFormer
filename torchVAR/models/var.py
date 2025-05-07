@@ -273,6 +273,7 @@ class VAR(nn.Module):
                 )  # double the batch sizes due to CFG
 
             if si in return_sizes:
+                print(f"Adding image of size {si}x{si}")
                 results.append(self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5))
 
         for b in self.blocks:
