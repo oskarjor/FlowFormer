@@ -102,9 +102,9 @@ def train(argv):
 
     # DATASETS/DATALOADER
     if FLAGS.dataset == "imagenet":
-        if FLAGS.post_image_size not in [32, 64, 128, 256]:
+        if FLAGS.post_image_size not in [32, 64, 128, 256, 512]:
             raise ValueError(
-                "Imagenet only supports 32x32, 64x64, 128x128, 256x256 images"
+                "Imagenet only supports 32x32, 64x64, 128x128, 256x256, 512x512 images"
             )
         num_classes = 1000
         train_set, val_set = build_SR_dataset(
