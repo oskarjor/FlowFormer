@@ -144,6 +144,8 @@ def build_SR_dataset(
     mid_reso = round(
         mid_reso * post_image_size
     )  # first resize to mid_reso, then crop to final_reso
+
+    # Pre-transforms to get the high-res image
     train_pre_aug, val_pre_aug = (
         [
             transforms.Resize(
@@ -164,29 +166,36 @@ def build_SR_dataset(
     train_pre_aug = transforms.Compose(train_pre_aug)
     val_pre_aug = transforms.Compose(val_pre_aug)
 
-    train_aug, target_aug = (
+    # Transforms to create the degraded version
+    # First resize down to low-res, then back up to high-res
+    degrade_transform = transforms.Compose(
         [
-            transforms.Resize(pre_image_size, interpolation=InterpolationMode.LANCZOS),
-            transforms.Resize(post_image_size, interpolation=InterpolationMode.NEAREST),
+            transforms.Resize(
+                pre_image_size, interpolation=InterpolationMode.LANCZOS
+            ),  # Downscale
+            transforms.Resize(
+                post_image_size, interpolation=InterpolationMode.NEAREST
+            ),  # Upscale back
             transforms.ToTensor(),
             normalize_01_into_pm1,
-        ],
-        [
-            transforms.ToTensor(),
-            normalize_01_into_pm1,
-        ],
+        ]
     )
 
-    train_aug = transforms.Compose(train_aug)
-    target_aug = transforms.Compose(target_aug)
+    # Transform for the high-res target
+    target_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            normalize_01_into_pm1,
+        ]
+    )
 
     train_set = SR_DatasetFolder(
         root=osp.join(data_path, "train"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         pre_transform=train_pre_aug,
-        transform=train_aug,
-        target_transform=target_aug,
+        transform=degrade_transform,
+        target_transform=target_transform,
     )
 
     val_set = SR_DatasetFolder(
@@ -194,8 +203,8 @@ def build_SR_dataset(
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         pre_transform=val_pre_aug,
-        transform=train_aug,
-        target_transform=target_aug,
+        transform=degrade_transform,
+        target_transform=target_transform,
     )
 
     return train_set, val_set
