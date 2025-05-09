@@ -54,6 +54,7 @@ def generate_samples(
     num_samples=64,
     x0=None,
     y=None,
+    compare_samples=False,
 ):
     """Save 64 generated images (8 x 8) for sanity check along training.
 
@@ -110,8 +111,16 @@ def generate_samples(
         # Get final trajectory and post-process
         traj = traj[-1].view([-1, 3, image_size, image_size]).clip(-1, 1)
         traj = traj / 2 + 0.5
-
-    save_image(traj, savedir + f"{net_}_generated_FM_images_step_{step}.png", nrow=8)
+    if not compare_samples:
+        save_image(
+            traj, savedir + f"{net_}_generated_FM_images_step_{step}.png", nrow=8
+        )
+    if compare_samples:
+        x0_images = x0.view([-1, 3, image_size, image_size]).clip(-1, 1)
+        x0_images = x0_images / 2 + 0.5
+        # Create a grid with both x0 and generated images side by side
+        comparison = torch.cat([x0_images, traj], dim=0)
+        save_image(comparison, savedir + f"{net_}_comparison_step_{step}.png", nrow=8)
     model.train()
     return traj
 
