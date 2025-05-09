@@ -192,6 +192,10 @@ def train(argv):
         use_fp16=FLAGS.use_amp,
     ).to(device)
 
+    # Convert model to float16 if using AMP
+    if FLAGS.use_amp:
+        net_model = net_model.half()
+
     if FLAGS.use_wandb:
         import wandb
 
