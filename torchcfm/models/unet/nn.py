@@ -140,7 +140,9 @@ class CheckpointFunction(th.autograd.Function):
             # Tensor storage in place, which is not allowed for detach()'d
             # Tensors.
             shallow_copies = [x.view_as(x) for x in ctx.input_tensors]
-            output_tensors = ctx.run_function(*shallow_copies)
+            # Use the same dtype as the input tensors
+            with th.amp.autocast("cuda", enabled=True):
+                output_tensors = ctx.run_function(*shallow_copies)
         input_grads = th.autograd.grad(
             output_tensors,
             ctx.input_tensors + ctx.input_params,
