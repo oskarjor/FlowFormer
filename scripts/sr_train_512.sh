@@ -19,8 +19,9 @@ pwd
 export WANDB_API_KEY=$(cat ~/FlowFormer/.wandb_api_key)
 
 python train_SR/train.py \
-	--batch_size=16 \
-	--total_steps=400000 \
+	--batch_size=8 \
+	--gradient_accumulation_steps=4 \
+	--total_steps=400001 \
 	--model="otcfm" \
 	--save_dir="./results/otcfm/$SLURM_JOB_ID/" \
 	--pre_image_size=256 \
