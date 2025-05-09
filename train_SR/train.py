@@ -47,7 +47,7 @@ flags.DEFINE_bool("debug", False, help="debug mode")
 flags.DEFINE_integer(
     "gradient_accumulation_steps", 1, help="number of steps to accumulate gradients"
 )
-flags.DEFINE_bool("use_amp", True, help="whether to use automatic mixed precision")
+flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precision")
 
 # Evaluation
 flags.DEFINE_integer(
