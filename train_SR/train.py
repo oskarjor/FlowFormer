@@ -44,9 +44,6 @@ flags.DEFINE_integer("post_image_size", 64, help="image size")
 flags.DEFINE_string("dataset", "imagenet", help="dataset")
 flags.DEFINE_list("class_indices", None, help="class indices")
 flags.DEFINE_bool("debug", False, help="debug mode")
-flags.DEFINE_integer(
-    "gradient_accumulation_steps", 1, help="number of steps to accumulate gradients"
-)
 flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precision")
 
 # Evaluation
@@ -103,9 +100,6 @@ def train(argv):
 
     if FLAGS.class_indices is not None:
         FLAGS.class_indices = [int(i) for i in FLAGS.class_indices]
-
-    # Initialize mixed precision training
-    scaler = torch.cuda.amp.GradScaler(enabled=FLAGS.use_amp)
 
     # DATASETS/DATALOADER
     if FLAGS.dataset == "imagenet":
@@ -268,34 +262,22 @@ def train(argv):
         if FLAGS.debug:
             print(f"Step {step} of {FLAGS.total_steps}")
 
-        # Zero gradients at the start of accumulation
-        if step % FLAGS.gradient_accumulation_steps == 0:
-            optim.zero_grad()
+        optim.zero_grad()
 
         x0, x1, y = next(datalooper)
         x0 = x0.to(device)
         x1 = x1.to(device)
         y = y.to(device) if FLAGS.class_conditional else None
 
-        # Use automatic mixed precision
-        with torch.amp.autocast("cuda", enabled=FLAGS.use_amp):
-            t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
-            vt = net_model(t, xt, y)
-            loss = torch.mean((vt - ut) ** 2)
-            # Scale loss by gradient accumulation steps
-            loss = loss / FLAGS.gradient_accumulation_steps
+        t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
+        vt = net_model(t, xt, y)
+        loss = torch.mean((vt - ut) ** 2)
 
-        # Scale loss and backpropagate
-        scaler.scale(loss).backward()
-
-        # Update weights if we've accumulated enough gradients
-        if (step + 1) % FLAGS.gradient_accumulation_steps == 0:
-            scaler.unscale_(optim)
-            torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
-            scaler.step(optim)
-            scaler.update()
-            sched.step()
-            ema(net_model, ema_model, FLAGS.ema_decay)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
+        optim.step()
+        sched.step()
+        ema(net_model, ema_model, FLAGS.ema_decay)
 
         # Print training progress at intervals
         if step % FLAGS.print_step == 0:
@@ -351,12 +333,11 @@ def train(argv):
                     val_x0, val_x1 = val_x0.to(device), val_x1.to(device)
                     val_y = val_y.to(device) if FLAGS.class_conditional else None
 
-                    with torch.amp.autocast("cuda", enabled=FLAGS.use_amp):
-                        val_t, val_xt, val_ut = FM.sample_location_and_conditional_flow(
-                            val_x0, val_x1
-                        )
-                        val_vt = net_model(val_t, val_xt, val_y)
-                        val_loss = torch.mean((val_vt - val_ut) ** 2)
+                    val_t, val_xt, val_ut = FM.sample_location_and_conditional_flow(
+                        val_x0, val_x1
+                    )
+                    val_vt = net_model(val_t, val_xt, val_y)
+                    val_loss = torch.mean((val_vt - val_ut) ** 2)
 
                     if val_step == 0:
                         # generate samples
