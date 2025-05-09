@@ -93,12 +93,13 @@ def timestep_embedding(timesteps, dim, max_period=10000):
     :return: an [N x dim] Tensor of positional embeddings.
     """
     half = dim // 2
+    # Use the same dtype as the input timesteps
     freqs = th.exp(
         -math.log(max_period)
-        * th.arange(start=0, end=half, dtype=th.float32, device=timesteps.device)
+        * th.arange(start=0, end=half, dtype=timesteps.dtype, device=timesteps.device)
         / half
     )
-    args = timesteps[:, None].float() * freqs[None]
+    args = timesteps[:, None] * freqs[None]  # Remove .float() to keep original dtype
     embedding = th.cat([th.cos(args), th.sin(args)], dim=-1)
     if dim % 2:
         embedding = th.cat([embedding, th.zeros_like(embedding[:, :1])], dim=-1)
