@@ -90,7 +90,7 @@ def generate_samples(
                 )
             else:
                 generated_class_list = y
-
+                generated_class_list = generated_class_list.int()
             # Ensure consistent precision for ODE solver
             x0 = x0.float()  # Convert to float32 for ODE solver
             generated_class_list = (
