@@ -90,8 +90,12 @@ def generate_samples(
                 )
             else:
                 generated_class_list = y
-            # Set first 16 samples to same class (340 = zebra)
-            # generated_class_list[:16] = torch.tensor([340], device=device)
+
+            # Ensure consistent precision for ODE solver
+            x0 = x0.float()  # Convert to float32 for ODE solver
+            generated_class_list = (
+                generated_class_list.float()
+            )  # Convert to float32 if needed
 
             # Use torchdiffeq's odeint with class conditioning
             traj = torchdiffeq.odeint(
