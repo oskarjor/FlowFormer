@@ -192,10 +192,6 @@ def train(argv):
         use_fp16=FLAGS.use_amp,
     ).to(device)
 
-    # Convert model to float16 if using AMP
-    if FLAGS.use_amp:
-        net_model = net_model.half()
-
     if FLAGS.use_wandb:
         import wandb
 
@@ -355,11 +351,13 @@ def train(argv):
                     val_x0, val_x1 = val_x0.to(device), val_x1.to(device)
                     val_y = val_y.to(device) if FLAGS.class_conditional else None
 
-                    val_t, val_xt, val_ut = FM.sample_location_and_conditional_flow(
-                        val_x0, val_x1
-                    )
-                    val_vt = net_model(val_t, val_xt, val_y)
-                    val_loss = torch.mean((val_vt - val_ut) ** 2)
+                    with torch.amp.autocast("cuda", enabled=FLAGS.use_amp):
+                        val_t, val_xt, val_ut = FM.sample_location_and_conditional_flow(
+                            val_x0, val_x1
+                        )
+                        val_vt = net_model(val_t, val_xt, val_y)
+                        val_loss = torch.mean((val_vt - val_ut) ** 2)
+
                     if val_step == 0:
                         # generate samples
                         generated_x1 = generate_samples(
