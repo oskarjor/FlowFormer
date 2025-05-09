@@ -189,7 +189,7 @@ def train(argv):
         class_cond=FLAGS.class_conditional,
         num_classes=num_classes,
         use_new_attention_order=True,
-        use_fp16=False,
+        use_fp16=FLAGS.use_amp,
     ).to(device)
 
     if FLAGS.use_wandb:
@@ -278,7 +278,7 @@ def train(argv):
         y = y.to(device) if FLAGS.class_conditional else None
 
         # Use automatic mixed precision
-        with torch.cuda.amp.autocast(enabled=FLAGS.use_amp):
+        with torch.amp.autocast("cuda", enabled=FLAGS.use_amp):
             t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
             vt = net_model(t, xt, y)
             loss = torch.mean((vt - ut) ** 2)
@@ -444,7 +444,7 @@ def check_model_size(argv):
         class_cond=FLAGS.class_conditional,
         num_classes=num_classes,
         use_new_attention_order=True,
-        use_fp16=False,
+        use_fp16=FLAGS.use_amp,
     ).to(device)
 
     model_size = 0
