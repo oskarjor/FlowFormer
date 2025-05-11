@@ -125,6 +125,8 @@ def sample_var(argv):
     B = len(class_labels)
     label_B: torch.LongTensor = torch.tensor(class_labels, device=device)
 
+    print(f"Sampling {B} images")
+
     # save the class labels
     np.save(osp.join(output_dir, "class_labels.npy"), class_labels)
 
@@ -134,11 +136,10 @@ def sample_var(argv):
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
-                if i + FLAGS.batch_size > B:
-                    break
+                B = min(FLAGS.batch_size, B - i)
                 recon_B3HW = var.autoregressive_infer_cfg(
-                    B=FLAGS.batch_size,
-                    label_B=label_B[i : i + FLAGS.batch_size],
+                    B=B,
+                    label_B=label_B[i : i + B],
                     cfg=cfg,
                     top_k=900,
                     top_p=0.95,
