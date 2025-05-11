@@ -233,8 +233,8 @@ class VAR(nn.Module):
         for b in self.blocks:
             b.attn.kv_caching(True)
 
-        ms_idx_Bl = []
-        ms_h_BChw = []
+        # ms_idx_Bl = []
+        # ms_h_BChw = []
         for si, pn in enumerate(self.patch_nums):  # si: i-th segment
             ratio = si / self.num_stages_minus_1
             # last_L = cur_L
@@ -275,18 +275,18 @@ class VAR(nn.Module):
                     2, 1, 1
                 )  # double the batch sizes due to CFG
 
-            ms_idx_Bl.append(idx_Bl)
-            ms_h_BChw.append(h_BChw)
+            # ms_idx_Bl.append(idx_Bl)
+            # ms_h_BChw.append(h_BChw)
 
         ### NEW METHOD (all images, but poor quality)
-        results = self.vae_proxy[0].embed_to_img(ms_h_BChw, all_to_max_scale=True, last_one=False)
-        results = [result.add_(1).mul_(0.5) for result in results]
+        # results = self.vae_proxy[0].embed_to_img(ms_h_BChw, all_to_max_scale=True, last_one=False)
+        # results = [result.add_(1).mul_(0.5) for result in results]
 
-        for result in results:
-            print(f"result.shape: {result.shape}")
+        # for result in results:
+        #     print(f"result.shape: {result.shape}")
 
         ### OLD METHOD (only last image)
-        # results = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+        results = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
 
         for b in self.blocks:
             b.attn.kv_caching(False)
