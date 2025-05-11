@@ -22,26 +22,30 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer("model_depth", 16, help="model depth")
 flags.DEFINE_string("vae_ckpt", "vae_ch160v4096z32.pth", help="vae checkpoint")
 flags.DEFINE_string("var_ckpt", "var_d16.pth", help="var checkpoint")
-flags.DEFINE_string("output_dir", "./results/VAR/", help="output_directory")
+flags.DEFINE_string("job_id", None, help="slurm job id")
 flags.DEFINE_integer("seed", 0, help="seed")
 flags.DEFINE_integer("num_sampling_steps", 250, help="number of sampling steps")
 flags.DEFINE_float("cfg", 4.0, help="classifier-free guidance")
-flags.DEFINE_list(
-    "class_labels", [980, 980, 437, 437, 22, 22, 562, 562], help="class labels"
-)
+flags.DEFINE_integer("num_classes", 1000, help="number of classes in dataset")
 flags.DEFINE_bool("more_smooth", False, help="more smooth")
 flags.DEFINE_integer("num_samples_per_class", 50, help="number of samples per class")
 flags.DEFINE_bool("debug", False, help="debug")
 flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 flags.DEFINE_list("return_sizes", [16], help="return sizes")
+flags.DEFINE_integer("batch_size", 64, help="batch size")
 
 
 def sample_var(argv):
+    if FLAGS.job_id == None:
+        raise ValueError("job_id is not set")
+    output_dir = (
+        f"output/VAR/{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}/{FLAGS.job_id}"
+    )
     # save flags to flags.json
-    os.makedirs(FLAGS.output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     flags_dict = flags.FLAGS.flag_values_dict()
-    flags_path = os.path.join(FLAGS.output_dir, "flags.json")
+    flags_path = os.path.join(output_dir, "flags.json")
     with open(flags_path, "w") as f:
         json.dump(flags_dict, f, indent=4)
 
@@ -99,19 +103,8 @@ def sample_var(argv):
         FLAGS.num_sampling_steps
     )  # @param {type:"slider", min:0, max:1000, step:1}
     cfg = FLAGS.cfg
-    class_labels = FLAGS.class_labels
     more_smooth = FLAGS.more_smooth
     num_samples_per_class = FLAGS.num_samples_per_class
-
-    if FLAGS.debug:
-        print(class_labels)
-        print(type(class_labels))
-
-    class_labels = [int(x) for x in class_labels]
-
-    if FLAGS.debug:
-        print(class_labels)
-        print(type(class_labels))
 
     # seed
     torch.manual_seed(seed)
@@ -126,12 +119,18 @@ def sample_var(argv):
     torch.backends.cuda.matmul.allow_tf32 = bool(tf32)
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
 
+    class_labels = [
+        i for _ in range(FLAGS.num_samples_per_class) for i in range(FLAGS.num_classes)
+    ]
+    B = len(class_labels)
+    label_B: torch.LongTensor = torch.tensor(class_labels, device=device)
+
+    # save the class labels
+    np.save(osp.join(output_dir, "class_labels.npy"), class_labels)
+
     # sample
-    for class_label in class_labels:
-        expanded_class_labels = [class_label for _ in range(num_samples_per_class)]
-        B = len(expanded_class_labels)
-        label_B: torch.LongTensor = torch.tensor(expanded_class_labels, device=device)
-        with torch.inference_mode():
+    with torch.inference_mode():
+        for i in range(0, B, FLAGS.batch_size):
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
@@ -143,24 +142,13 @@ def sample_var(argv):
                     top_p=0.95,
                     g_seed=seed,
                     more_smooth=more_smooth,
-                    return_sizes=return_sizes,
                 )
-            if FLAGS.debug:
-                print(f"Number of different sizes: {len(recon_B3HW)}")
-                print(f"Expected sizes: {return_sizes}")
-            for idx in range(len(return_sizes)):
-                if FLAGS.debug:
-                    print(f"Saving images of size {return_sizes[idx]}")
-                    print(f"recon_B3HW[idx].shape: {recon_B3HW[idx].shape}")
-                images = (
-                    recon_B3HW[idx].clone().mul_(255).cpu().numpy().astype(np.uint8)
-                )
-                if FLAGS.debug:
-                    print(f"images.shape: {images.shape}")
+
+                images = recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
                 np.save(
                     osp.join(
-                        FLAGS.output_dir,
-                        f"class_{class_label}_{num_samples_per_class}_images_{return_sizes[idx]}x{return_sizes[idx]}.npy",
+                        output_dir,
+                        f"images{i}_{i + FLAGS.batch_size}.npy",
                     ),
                     images,
                 )
