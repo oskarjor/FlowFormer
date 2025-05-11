@@ -134,9 +134,11 @@ def sample_var(argv):
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
+                if i + FLAGS.batch_size > B:
+                    break
                 recon_B3HW = var.autoregressive_infer_cfg(
-                    B=B,
-                    label_B=label_B,
+                    B=FLAGS.batch_size,
+                    label_B=label_B[i : i + FLAGS.batch_size],
                     cfg=cfg,
                     top_k=900,
                     top_p=0.95,
