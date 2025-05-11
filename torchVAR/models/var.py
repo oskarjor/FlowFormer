@@ -182,7 +182,6 @@ class VAR(nn.Module):
         top_k=0,
         top_p=0.0,
         more_smooth=False,
-        return_sizes=[16],
     ) -> torch.Tensor:  # returns reconstructed image (B, 3, H, W) in [0, 1]
         """
         only used for inference, on autoregressive mode
@@ -218,8 +217,6 @@ class VAR(nn.Module):
             )
         )
 
-        results = []
-
         lvl_pos = self.lvl_embed(self.lvl_1L) + self.pos_1LC
         next_token_map = (
             sos.unsqueeze(1).expand(2 * B, self.first_l, -1)
@@ -233,8 +230,6 @@ class VAR(nn.Module):
         for b in self.blocks:
             b.attn.kv_caching(True)
 
-        # ms_idx_Bl = []
-        # ms_h_BChw = []
         for si, pn in enumerate(self.patch_nums):  # si: i-th segment
             ratio = si / self.num_stages_minus_1
             # last_L = cur_L
@@ -275,22 +270,12 @@ class VAR(nn.Module):
                     2, 1, 1
                 )  # double the batch sizes due to CFG
 
-            # ms_idx_Bl.append(idx_Bl)
-            # ms_h_BChw.append(h_BChw)
-
-        ### NEW METHOD (all images, but poor quality)
-        # results = self.vae_proxy[0].embed_to_img(ms_h_BChw, all_to_max_scale=True, last_one=False)
-        # results = [result.add_(1).mul_(0.5) for result in results]
-
-        # for result in results:
-        #     print(f"result.shape: {result.shape}")
-
         ### OLD METHOD (only last image)
-        results = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
+        result = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
 
         for b in self.blocks:
             b.attn.kv_caching(False)
-        return results
+        return result
 
     def forward(
         self, label_B: torch.LongTensor, x_BLCv_wo_first_l: torch.Tensor
