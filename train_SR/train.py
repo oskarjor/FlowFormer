@@ -348,7 +348,7 @@ def train(argv):
                             step,
                             image_size=FLAGS.post_image_size,
                             x0=val_x0,
-                            y=val_y,
+                            y=val_y.long() if val_y is not None else None,
                             class_cond=FLAGS.class_conditional,
                             num_samples=FLAGS.batch_size,
                             num_classes=num_classes,
