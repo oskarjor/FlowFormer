@@ -90,8 +90,6 @@ def generate_samples(
                 )
             else:
                 generated_class_list = y
-            # Ensure consistent precision for ODE solver
-            x0 = x0.float()  # Convert to float32 for ODE solver
 
             # Use torchdiffeq's odeint with class conditioning
             traj = torchdiffeq.odeint(
