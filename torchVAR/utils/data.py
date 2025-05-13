@@ -174,7 +174,7 @@ def build_SR_dataset(
                 pre_image_size, interpolation=InterpolationMode.LANCZOS
             ),  # Downscale
             transforms.Resize(
-                post_image_size, interpolation=InterpolationMode.NEAREST
+                post_image_size, interpolation=InterpolationMode.LANCZOS
             ),  # Upscale back
             transforms.ToTensor(),
             normalize_01_into_pm1,
