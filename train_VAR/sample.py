@@ -130,6 +130,8 @@ def sample_var(argv):
     # save the class labels
     np.save(osp.join(output_dir, "class_labels.npy"), class_labels)
 
+    npy_images = np.zeros((B, 3, 256, 256), dtype=np.uint8)
+
     # sample
     with torch.inference_mode():
         for i in range(0, B, FLAGS.batch_size):
@@ -148,13 +150,9 @@ def sample_var(argv):
                 )
 
                 images = recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
-                np.save(
-                    osp.join(
-                        output_dir,
-                        f"images{i}_{i + FLAGS.batch_size}.npy",
-                    ),
-                    images,
-                )
+                npy_images[i : i + current_batch_size] = images
+
+    np.save(osp.join(output_dir, "images.npy"), npy_images)
 
 
 if __name__ == "__main__":
