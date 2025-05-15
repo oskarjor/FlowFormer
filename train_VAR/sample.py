@@ -135,6 +135,8 @@ def sample_var(argv):
     # sample
     with torch.inference_mode():
         for i in range(0, B, FLAGS.batch_size):
+            if i % 1000 == 0:
+                print(f"Sampling {i} / {B} images")
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
