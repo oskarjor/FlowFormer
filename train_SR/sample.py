@@ -54,7 +54,7 @@ def sample_sr(argv):
     datalooper = infiniteloop(dataloader)
 
     # MODELS
-    if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
+    if FLAGS.pre_image_size == 32 and FLAGS.post_image_size == 64:
         num_heads = 4
         num_head_channels = 64
         attention_resolutions = "16"
@@ -62,14 +62,15 @@ def sample_sr(argv):
         resblock_updown = False
         num_res_blocks = 2
         num_channel = 128
-    elif json_args["pre_image_size"] == 256 and json_args["post_image_size"] == 512:
-        num_heads = 16
-        num_head_channels = 128
+
+    elif FLAGS.pre_image_size == 256 and FLAGS.post_image_size == 512:
+        num_heads = 8
+        num_head_channels = 64
         attention_resolutions = "16"
         use_scale_shift_norm = True
         resblock_updown = False
-        num_res_blocks = 3
-        num_channel = 256
+        num_res_blocks = 2
+        num_channel = 128
     else:
         raise ValueError(
             f"Unknown image size: {json_args['pre_image_size']}->{json_args['post_image_size']}"
