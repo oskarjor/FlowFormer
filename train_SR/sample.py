@@ -103,9 +103,8 @@ def sample_sr(argv):
     npy_images = np.zeros((len(dataset), 3, 256, 256), dtype=np.uint8)
 
     for i in range(0, len(dataset), FLAGS.batch_size):
-        x0, x1, y = next(datalooper)
+        x0, y = next(datalooper)
         x0 = x0.to(device)
-        x1 = x1.to(device)
         y = y.to(device) if FLAGS.class_conditional else None
 
         traj = generate_samples(
