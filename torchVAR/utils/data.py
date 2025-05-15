@@ -145,7 +145,7 @@ class NumpyDataset(torch.utils.data.Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img = torch.from_numpy(self.data[idx]).float()
+        img = self.data[idx]
         # Convert from (H, W, C) to (C, H, W) if needed
         if img.shape[-1] == 3:
             img = img.permute(2, 0, 1)
