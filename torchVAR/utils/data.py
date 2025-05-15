@@ -3,6 +3,8 @@ import os.path as osp
 import PIL.Image as PImage
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
+import numpy as np
+import torch
 
 
 def normalize_01_into_pm1(x):  # normalize x from [0, 1] to [-1, 1] by (x*2) - 1
@@ -132,14 +134,90 @@ class SR_DatasetFolder(DatasetFolder):
         return image, target, class_idx
 
 
+# Create custom dataset class
+class NumpyDataset(torch.utils.data.Dataset):
+    def __init__(self, data, class_labels, transform=None):
+        self.data = data
+        self.class_labels = class_labels
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        img = torch.from_numpy(self.data[idx]).float()
+        # Convert from (H, W, C) to (C, H, W) if needed
+        if img.shape[-1] == 3:
+            img = img.permute(2, 0, 1)
+        if self.transform is not None:
+            img = self.transform(img)
+        return img, self.class_labels[idx].astype(np.int64)
+
+
+def build_npy_dataset(
+    data_path: str,
+    post_image_size: int,
+    naive_upscaling="nearest",
+):
+    """
+    Build a dataset from a numpy file containing images.
+    Args:
+        data_path: Path to the numpy file containing images
+        naive_upscaling: The naive upscaling method to use
+    """
+
+    if naive_upscaling == "nearest":
+        interpolation = InterpolationMode.NEAREST
+    elif naive_upscaling == "bicubic":
+        interpolation = InterpolationMode.BICUBIC
+    elif naive_upscaling == "lanczos":
+        interpolation = InterpolationMode.LANCZOS
+    else:
+        raise ValueError(f"Invalid naive_upscaling method {naive_upscaling}")
+
+    transform = transforms.Compose(
+        [
+            transforms.Resize(
+                post_image_size, interpolation=interpolation
+            ),  # transforms.Resize: resize the shorter edge to mid_reso
+            transforms.ToTensor(),
+            normalize_01_into_pm1,
+        ]
+    )
+
+    # Load the numpy file
+    data = np.load(osp.join(data_path, "images.npy"))
+    class_labels = np.load(osp.join(data_path, "class_labels.npy"))
+    if len(data.shape) != 4:
+        raise ValueError(
+            f"Expected numpy array of shape (N, H, W, C), got {data.shape}"
+        )
+
+    dataset = NumpyDataset(data, class_labels, transform=transform)
+    print(f"[Dataset] {len(dataset)=}")
+    print(f"[Class labels] {len(class_labels)=}")
+    return dataset
+
+
 def build_SR_dataset(
     data_path: str,
     pre_image_size: int,
     post_image_size: int,
     hflip=False,
     mid_reso=1.125,
-    class_indices=None,
+    naive_upscaling="nearest",
 ):
+    assert naive_upscaling in ["nearest", "bicubic", "lanczos"], (
+        f"Invalid naive_upscaling method {naive_upscaling}"
+    )
+
+    if naive_upscaling == "nearest":
+        interpolation = InterpolationMode.NEAREST
+    elif naive_upscaling == "bicubic":
+        interpolation = InterpolationMode.BICUBIC
+    elif naive_upscaling == "lanczos":
+        interpolation = InterpolationMode.LANCZOS
+
     # build augmentations
     mid_reso = round(
         mid_reso * post_image_size
@@ -174,7 +252,7 @@ def build_SR_dataset(
                 pre_image_size, interpolation=InterpolationMode.LANCZOS
             ),  # Downscale
             transforms.Resize(
-                post_image_size, interpolation=InterpolationMode.LANCZOS
+                post_image_size, interpolation=interpolation
             ),  # Upscale back
             transforms.ToTensor(),
             normalize_01_into_pm1,
