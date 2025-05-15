@@ -93,7 +93,7 @@ def sample_sr(argv):
     ).to(device)
 
     # load model
-    model_weights = torch.load(flags.model_path, map_location=device)
+    model_weights = torch.load(FLAGS.model_path, map_location=device)
     net_model.load_state_dict(model_weights["net_model"])
     net_model.eval()
 
