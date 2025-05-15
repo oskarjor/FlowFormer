@@ -2,8 +2,10 @@ from absl import app, flags
 import json
 import torch
 import os
-
-from torchVAR.utils.data import build_SR_dataset
+import numpy as np
+import os.path as osp
+import shutil
+from torchVAR.utils.data import build_SR_dataset, build_npy_dataset
 from utils_SR import infiniteloop, generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 
@@ -11,7 +13,6 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("model_path", None, help="model path")
-flags.DEFINE_integer("num_batches", 1, help="number of batches")
 flags.DEFINE_string("save_dir", "", help="save directory")
 
 
@@ -33,11 +34,10 @@ def sample_sr(argv):
     json_args = read_json_flags(json_path)
 
     # build dataset
-    dataset = build_SR_dataset(
+    dataset = build_npy_dataset(
         data_path=json_args["data_path"],
-        pre_image_size=json_args["pre_image_size"],
         post_image_size=json_args["post_image_size"],
-        class_indices=json_args["class_indices"],
+        naive_upscaling=json_args["naive_upscaling"],
     )
 
     dataloader = torch.utils.data.DataLoader(
@@ -96,13 +96,15 @@ def sample_sr(argv):
 
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
+    npy_images = np.zeros((len(dataset), 3, 256, 256), dtype=np.uint8)
+
     for batch_idx in range(FLAGS.num_batches):
         x0, x1, y = next(datalooper)
         x0 = x0.to(device)
         x1 = x1.to(device)
         y = y.to(device) if FLAGS.class_conditional else None
 
-        generate_samples(
+        traj = generate_samples(
             net_model,
             parallel=False,
             savedir=FLAGS.save_dir,
@@ -115,7 +117,20 @@ def sample_sr(argv):
             num_samples=json_args["batch_size"],
             x0=x0,
             y=y,
+            save_png=False,
         )
+
+        npy_images[
+            batch_idx * json_args["batch_size"] : (batch_idx + 1)
+            * json_args["batch_size"]
+        ] = traj
+
+    np.save(osp.join(FLAGS.save_dir, "images.npy"), npy_images)
+    # copy the class labels from data_path / "class_labels.npy"
+    shutil.copy(
+        osp.join(json_args["data_path"], "class_labels.npy"),
+        osp.join(FLAGS.save_dir, "class_labels.npy"),
+    )
 
 
 if __name__ == "__main__":
