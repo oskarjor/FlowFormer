@@ -192,7 +192,11 @@ def build_npy_dataset(
 
     # Load the numpy file
     data = np.load(osp.join(data_path, "images.npy"))
+    print("DATA SHAPE", data.shape)
+    print("DATA TYPE", data.dtype)
     class_labels = np.load(osp.join(data_path, "class_labels.npy"))
+    print("CLASS LABELS SHAPE", class_labels.shape)
+    print("CLASS LABELS TYPE", class_labels.dtype)
     if len(data.shape) != 4:
         raise ValueError(
             f"Expected numpy array of shape (N, H, W, C), got {data.shape}"

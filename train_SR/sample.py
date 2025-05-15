@@ -27,9 +27,6 @@ def read_json_flags(json_path):
 
 
 def sample_sr(argv):
-    data = np.load(osp.join(FLAGS.data_path, "data.npy"))
-    print("DATA SHAPE", data.shape)
-    print("DATA TYPE", data.dtype)
     NUM_CLASSES = 1000
 
     json_path = FLAGS.json_path
