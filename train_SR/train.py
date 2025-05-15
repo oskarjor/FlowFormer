@@ -45,6 +45,7 @@ flags.DEFINE_string("dataset", "imagenet", help="dataset")
 flags.DEFINE_list("class_indices", None, help="class indices")
 flags.DEFINE_bool("debug", False, help="debug mode")
 flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precision")
+flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling method")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -113,6 +114,7 @@ def train(argv):
             pre_image_size=FLAGS.pre_image_size,
             post_image_size=FLAGS.post_image_size,
             class_indices=FLAGS.class_indices,
+            naive_upscaling=FLAGS.naive_upscaling,
         )
 
         if FLAGS.debug:
