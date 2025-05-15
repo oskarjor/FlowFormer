@@ -14,6 +14,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("model_path", None, help="model path")
 flags.DEFINE_string("save_dir", "", help="save directory")
+flags.DEFINE_string("data_path", None, help="data path")
 
 
 use_cuda = torch.cuda.is_available()
@@ -35,7 +36,7 @@ def sample_sr(argv):
 
     # build dataset
     dataset = build_npy_dataset(
-        data_path=json_args["data_path"],
+        data_path=FLAGS.data_path,
         post_image_size=json_args["post_image_size"],
         naive_upscaling=json_args["naive_upscaling"],
     )
@@ -128,7 +129,7 @@ def sample_sr(argv):
     np.save(osp.join(FLAGS.save_dir, "images.npy"), npy_images)
     # copy the class labels from data_path / "class_labels.npy"
     shutil.copy(
-        osp.join(json_args["data_path"], "class_labels.npy"),
+        osp.join(FLAGS.data_path, "class_labels.npy"),
         osp.join(FLAGS.save_dir, "class_labels.npy"),
     )
 
