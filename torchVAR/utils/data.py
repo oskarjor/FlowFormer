@@ -153,9 +153,6 @@ class NumpyDataset(torch.utils.data.Dataset):
             img = self.transform(img)
         return img, self.class_labels[idx].astype(np.int64)
 
-    def __len__(self):
-        return len(self.data)
-
 
 def build_npy_dataset(
     data_path: str,
