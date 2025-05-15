@@ -6,6 +6,7 @@ import random
 import numpy as np
 import PIL.Image as PImage, PIL.ImageDraw as PImageDraw
 import json
+import time
 
 setattr(
     torch.nn.Linear, "reset_parameters", lambda self: None
@@ -133,10 +134,13 @@ def sample_var(argv):
     npy_images = np.zeros((B, 3, 256, 256), dtype=np.uint8)
 
     # sample
+    start_time = time.time()
     with torch.inference_mode():
         for i in range(0, B, FLAGS.batch_size):
             if i % 1000 == 0:
-                print(f"Sampling {i} / {B} images")
+                print(
+                    f"Sampling {i} / {B} images - {time.time() - start_time:.2f} seconds"
+                )
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
