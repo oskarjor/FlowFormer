@@ -15,7 +15,7 @@ flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("model_path", None, help="model path")
 flags.DEFINE_string("save_dir", "", help="save directory")
 flags.DEFINE_string("data_path", None, help="data path")
-
+flags.DEFINE_integer("batch_size", 32, help="batch size")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -43,7 +43,7 @@ def sample_sr(argv):
 
     dataloader = torch.utils.data.DataLoader(
         dataset,
-        batch_size=json_args["batch_size"],
+        batch_size=FLAGS.batch_size,
         shuffle=True,
         num_workers=json_args["num_workers"],
         drop_last=True,
@@ -99,7 +99,7 @@ def sample_sr(argv):
 
     npy_images = np.zeros((len(dataset), 3, 256, 256), dtype=np.uint8)
 
-    for batch_idx in range(FLAGS.num_batches):
+    for i in range(0, len(dataset), FLAGS.batch_size):
         x0, x1, y = next(datalooper)
         x0 = x0.to(device)
         x1 = x1.to(device)
@@ -121,10 +121,7 @@ def sample_sr(argv):
             save_png=False,
         )
 
-        npy_images[
-            batch_idx * json_args["batch_size"] : (batch_idx + 1)
-            * json_args["batch_size"]
-        ] = traj
+        npy_images[i : i + FLAGS.batch_size] = traj
 
     np.save(osp.join(FLAGS.save_dir, "images.npy"), npy_images)
     # copy the class labels from data_path / "class_labels.npy"
