@@ -146,6 +146,10 @@ class NumpyDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         img = self.data[idx]
+        # convert it to a PIL image
+        img = img.astype(np.uint8)
+        img = PImage.fromarray(img).convert("RGB")
+        print(img.size)
         # Convert from (H, W, C) to (C, H, W) if needed
         if img.shape[-1] == 3:
             img = img.permute(2, 0, 1)
