@@ -27,6 +27,8 @@ def read_json_flags(json_path):
 
 
 def sample_sr(argv):
+    NUM_CLASSES = 1000
+
     json_path = FLAGS.json_path
     if json_path is None:
         raise ValueError("json_path is required")
@@ -85,7 +87,7 @@ def sample_sr(argv):
         resblock_updown=resblock_updown,
         dropout=0.1,
         class_cond=json_args["class_conditional"],
-        num_classes=json_args["num_classes"],
+        num_classes=NUM_CLASSES,
         use_new_attention_order=True,
         use_fp16=False,
     ).to(device)
@@ -113,7 +115,7 @@ def sample_sr(argv):
             time_steps=100,
             image_size=json_args["post_image_size"],
             class_cond=json_args["class_conditional"],
-            num_classes=json_args["num_classes"],
+            num_classes=NUM_CLASSES,
             net_="normal",
             num_samples=json_args["batch_size"],
             x0=x0,
