@@ -53,8 +53,6 @@ def sample_sr(argv):
         drop_last=True,
     )
 
-    datalooper = infiniteloop(dataloader)
-
     # MODELS
     if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
         num_heads = 4
@@ -116,7 +114,7 @@ def sample_sr(argv):
         print(
             f"Sampling {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
         )
-        x0, y = next(datalooper)
+        x0, y = next(dataloader)
         print(f"x0: {x0.shape}, y: {y.shape}")
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
