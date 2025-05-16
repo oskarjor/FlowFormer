@@ -137,22 +137,26 @@ class SR_DatasetFolder(DatasetFolder):
 # Create custom dataset class
 class NumpyDataset(torch.utils.data.Dataset):
     def __init__(self, data, class_labels, transform=None):
-        self.data = data
-        self.class_labels = class_labels
+        # Ensure data is in the correct format and type at initialization
+        if data.dtype != np.uint8:
+            data = data.astype(np.uint8)
+        # Store data in (H, W, C) format to avoid transposition during __getitem__
+        if data.shape[1] == 3:  # If data is in (N, C, H, W) format
+            self.data = np.transpose(data, (0, 2, 3, 1))
+        else:
+            self.data = data
+        self.class_labels = class_labels.astype(np.int64)  # Convert labels once
         self.transform = transform
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img = self.data[idx]  # Shape: (C, H, W)
-        # Convert from (C, H, W) to (H, W, C) for PIL
-        img = np.transpose(img, (1, 2, 0))
-        img = img.astype(np.uint8)
-        img = PImage.fromarray(img).convert("RGB")
+        img = self.data[idx]  # Already in (H, W, C) format
         if self.transform is not None:
+            img = PImage.fromarray(img).convert("RGB")
             img = self.transform(img)
-        return img, self.class_labels[idx].astype(np.int64)
+        return img, self.class_labels[idx]
 
 
 def build_npy_dataset(
@@ -187,7 +191,7 @@ def build_npy_dataset(
     )
 
     # Load the numpy file
-    data = np.load(osp.join(data_path, "images.npy"))
+    data = np.load(osp.join(data_path, "images.npy"), mmap_mode="r")
     class_labels = np.load(osp.join(data_path, "class_labels.npy"))
     if len(data.shape) != 4:
         raise ValueError(
