@@ -91,7 +91,7 @@ def save_batch_to_imagenet_structure(images, class_labels, start_idx, class_to_i
         # Convert from (C, H, W) to (H, W, C) and save as JPEG
         img = np.transpose(img, (1, 2, 0))
         img_pil = PImage.fromarray(img)
-        img_path = osp.join(class_dir, f"sample_{start_idx + i:05d}.JPEG")
+        img_path = osp.join(class_dir, f"sample_{start_idx + i}.JPEG")
         img_pil.save(img_path, subsampling=0, quality=95)
 
 
