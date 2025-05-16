@@ -17,6 +17,7 @@ flags.DEFINE_string("model_path", None, help="model path")
 flags.DEFINE_string("save_dir", "", help="save directory")
 flags.DEFINE_string("data_path", None, help="data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
+flags.DEFINE_integer("time_steps", 100, help="time steps")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -121,7 +122,7 @@ def sample_sr(argv):
             parallel=False,
             savedir=FLAGS.save_dir,
             step=json_args["total_steps"],
-            time_steps=100,
+            time_steps=FLAGS.time_steps,
             image_size=json_args["post_image_size"],
             class_cond=json_args["class_conditional"],
             num_classes=NUM_CLASSES,
