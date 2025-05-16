@@ -106,15 +106,14 @@ def sample_sr(argv):
     )
     start_time = time.time()
 
-    for i in range(0, len(dataset), FLAGS.batch_size):
+    for i, (x0, y) in enumerate(dataloader):
         if i % (FLAGS.batch_size * 20) == 0:
             print(
-                f"Sampled {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
+                f"Sampled {i * FLAGS.batch_size} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
             )
         print(
-            f"Sampling {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
+            f"Sampling {i * FLAGS.batch_size} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
         )
-        x0, y = next(dataloader)
         print(f"x0: {x0.shape}, y: {y.shape}")
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
@@ -138,7 +137,7 @@ def sample_sr(argv):
         )
 
         images = traj.clone().mul_(255).cpu().numpy().astype(np.uint8)
-        npy_images[i : i + FLAGS.batch_size] = images
+        npy_images[i * FLAGS.batch_size : (i + 1) * FLAGS.batch_size] = images
 
     np.save(osp.join(FLAGS.save_dir, "images.npy"), npy_images)
     # copy the class labels from data_path / "class_labels.npy"
