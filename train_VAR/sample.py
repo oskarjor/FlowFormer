@@ -7,6 +7,8 @@ import numpy as np
 import PIL.Image as PImage, PIL.ImageDraw as PImageDraw
 import json
 import time
+from torchvision.datasets import DatasetFolder
+from torchvision.datasets.folder import IMG_EXTENSIONS
 
 setattr(
     torch.nn.Linear, "reset_parameters", lambda self: None
@@ -35,6 +37,61 @@ flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 flags.DEFINE_list("return_sizes", [16], help="return sizes")
 flags.DEFINE_integer("batch_size", 64, help="batch size")
+flags.DEFINE_string("split", "val", help="split")
+
+
+def pil_loader(path):
+    with open(path, "rb") as f:
+        img: PImage.Image = PImage.open(f).convert("RGB")
+    return img
+
+
+def get_imagenet_class_mapping():
+    """Get ImageNet class name to index mapping."""
+    # Load ImageNet class names from torchvision
+    train_set = DatasetFolder(
+        root=osp.join("./imagenet", FLAGS.split),
+        loader=pil_loader,
+        extensions=IMG_EXTENSIONS,
+        transform=None,
+    )
+    class_to_idx = train_set.class_to_idx
+    return class_to_idx
+
+
+def save_batch_to_imagenet_structure(images, class_labels, start_idx, class_to_idx):
+    """
+    Save a batch of images in ImageNet-like directory structure.
+    Args:
+        images: numpy array of shape (B, C, H, W) with values in [0, 255]
+        class_labels: numpy array of shape (B,) with class indices
+        output_dir: base directory to save images
+        start_idx: starting index for image naming
+        class_to_idx: mapping from class names to indices
+    """
+    # Create val directory
+    output_dir = osp.join(
+        f"./{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}_imagenet", FLAGS.split
+    )
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create reverse mapping from index to class name
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+
+    # Save images
+    for i, (img, label) in enumerate(zip(images, class_labels)):
+        # Get class name from index
+        class_name = idx_to_class[label]
+
+        # Create class directory if it doesn't exist
+        class_dir = osp.join(output_dir, class_name)
+        os.makedirs(class_dir, exist_ok=True)
+
+        # Convert from (C, H, W) to (H, W, C) and save as JPEG
+        img = np.transpose(img, (1, 2, 0))
+        img_pil = PImage.fromarray(img)
+        img_path = osp.join(class_dir, f"sample_{start_idx + i:05d}.JPEG")
+        img_pil.save(img_path, quality=95)
 
 
 def sample_var(argv):
@@ -120,6 +177,15 @@ def sample_var(argv):
     torch.backends.cuda.matmul.allow_tf32 = bool(tf32)
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
 
+    # Get ImageNet class mapping
+    class_to_idx = get_imagenet_class_mapping()
+
+    # Save class mapping
+    mapping_dir = f"./{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}_imagenet"
+    os.makedirs(mapping_dir, exist_ok=True)
+    with open(osp.join(mapping_dir, "class_to_idx.json"), "w") as f:
+        json.dump(class_to_idx, f, indent=4)
+
     class_labels = [
         i for _ in range(FLAGS.num_samples_per_class) for i in range(FLAGS.num_classes)
     ]
@@ -131,15 +197,13 @@ def sample_var(argv):
     # save the class labels
     np.save(osp.join(output_dir, "class_labels.npy"), class_labels)
 
-    npy_images = np.zeros((B, 3, 256, 256), dtype=np.uint8)
-
     # sample
     start_time = time.time()
     with torch.inference_mode():
         for i in range(0, B, FLAGS.batch_size):
             if i % (FLAGS.batch_size * 20) == 0:
                 print(
-                    f"Sampled {i} / {B} images - {time.time() - start_time:.2f} seconds"
+                    f"Sampling {i} / {B} images - {time.time() - start_time:.2f} seconds"
                 )
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
@@ -156,9 +220,13 @@ def sample_var(argv):
                 )
 
                 images = recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
-                npy_images[i : i + current_batch_size] = images
+                batch_labels = class_labels[i : i + current_batch_size]
 
-    np.save(osp.join(output_dir, "images.npy"), npy_images)
+                # Save batch immediately
+                save_batch_to_imagenet_structure(
+                    images, batch_labels, mapping_dir, i, class_to_idx
+                )
+
     print(f"Sampled {B} images in {time.time() - start_time:.2f} seconds")
 
 
