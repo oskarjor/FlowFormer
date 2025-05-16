@@ -77,6 +77,7 @@ def sample_sr(argv):
             f"Unknown image size: {json_args['pre_image_size']}->{json_args['post_image_size']}"
         )
 
+    print("Loading model...")
     net_model = UNetModelWrapper(
         dim=(3, json_args["post_image_size"], json_args["post_image_size"]),
         num_res_blocks=num_res_blocks,
@@ -106,6 +107,8 @@ def sample_sr(argv):
         dtype=np.uint8,
     )
     start_time = time.time()
+
+    print("Sampling...")
 
     for i, (x0, y) in enumerate(dataloader):
         print(
