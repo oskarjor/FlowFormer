@@ -117,8 +117,11 @@ def sample_sr(argv):
             f"Sampling {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
         )
         x0, y = next(datalooper)
+        print(f"x0: {x0.shape}, y: {y.shape}")
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
+
+        print(f"Generating samples for {json_args['batch_size']} images")
 
         traj = generate_samples(
             net_model,
