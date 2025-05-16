@@ -51,7 +51,7 @@ def sample_sr(argv):
         drop_last=True,
     )
 
-    datalooper = infiniteloop(dataloader, class_conditional=True, has_target=False)
+    datalooper = infiniteloop(dataloader)
 
     # MODELS
     if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
