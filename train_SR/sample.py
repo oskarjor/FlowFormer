@@ -8,6 +8,7 @@ import shutil
 from torchVAR.utils.data import build_SR_dataset, build_npy_dataset
 from utils_SR import infiniteloop, generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
+import time
 
 FLAGS = flags.FLAGS
 
@@ -101,8 +102,13 @@ def sample_sr(argv):
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     npy_images = np.zeros((len(dataset), 3, 256, 256), dtype=np.uint8)
+    start_time = time.time()
 
     for i in range(0, len(dataset), FLAGS.batch_size):
+        if i % (FLAGS.batch_size * 20) == 0:
+            print(
+                f"Sampled {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
+            )
         x0, y = next(datalooper)
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None

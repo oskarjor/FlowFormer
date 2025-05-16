@@ -137,9 +137,9 @@ def sample_var(argv):
     start_time = time.time()
     with torch.inference_mode():
         for i in range(0, B, FLAGS.batch_size):
-            if i % 1000 == 0:
+            if i % (FLAGS.batch_size * 20) == 0:
                 print(
-                    f"Sampling {i} / {B} images - {time.time() - start_time:.2f} seconds"
+                    f"Sampled {i} / {B} images - {time.time() - start_time:.2f} seconds"
                 )
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
