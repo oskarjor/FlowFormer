@@ -18,6 +18,7 @@ flags.DEFINE_string("save_dir", "", help="save directory")
 flags.DEFINE_string("data_path", None, help="data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("time_steps", 100, help="time steps")
+flags.DEFINE_integer("num_workers", 4, help="number of workers")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -49,7 +50,7 @@ def sample_sr(argv):
         dataset,
         batch_size=FLAGS.batch_size,
         shuffle=True,
-        num_workers=json_args["num_workers"],
+        num_workers=FLAGS.num_workers,
         drop_last=True,
     )
 
