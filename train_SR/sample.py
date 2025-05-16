@@ -113,6 +113,9 @@ def sample_sr(argv):
             print(
                 f"Sampled {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
             )
+        print(
+            f"Sampling {i} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
+        )
         x0, y = next(datalooper)
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
