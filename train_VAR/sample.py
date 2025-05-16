@@ -91,7 +91,7 @@ def save_batch_to_imagenet_structure(images, class_labels, start_idx, class_to_i
         img = np.transpose(img, (1, 2, 0))
         img_pil = PImage.fromarray(img)
         img_path = osp.join(class_dir, f"sample_{start_idx + i:05d}.JPEG")
-        img_pil.save(img_path, quality=95)
+        img_pil.save(img_path, subsampling=0, quality=95)
 
 
 def sample_var(argv):
@@ -223,9 +223,7 @@ def sample_var(argv):
                 batch_labels = class_labels[i : i + current_batch_size]
 
                 # Save batch immediately
-                save_batch_to_imagenet_structure(
-                    images, batch_labels, mapping_dir, i, class_to_idx
-                )
+                save_batch_to_imagenet_structure(images, batch_labels, i, class_to_idx)
 
     print(f"Sampled {B} images in {time.time() - start_time:.2f} seconds")
 
