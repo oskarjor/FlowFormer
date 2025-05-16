@@ -194,17 +194,11 @@ def sample_var(argv):
 
     print(f"Sampling {B} images")
 
-    # save the class labels
-    np.save(osp.join(output_dir, "class_labels.npy"), class_labels)
-
     # sample
     start_time = time.time()
     with torch.inference_mode():
         for i in range(0, B, FLAGS.batch_size):
-            if i % (FLAGS.batch_size * 20) == 0:
-                print(
-                    f"Sampling {i} / {B} images - {time.time() - start_time:.2f} seconds"
-                )
+            print(f"Sampling {i} / {B} images")
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
