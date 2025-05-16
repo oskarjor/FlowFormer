@@ -101,7 +101,10 @@ def sample_sr(argv):
 
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
-    npy_images = np.zeros((len(dataset), 3, 256, 256), dtype=np.uint8)
+    npy_images = np.zeros(
+        (len(dataset), 3, json_args["post_image_size"], json_args["post_image_size"]),
+        dtype=np.uint8,
+    )
     start_time = time.time()
 
     for i in range(0, len(dataset), FLAGS.batch_size):
