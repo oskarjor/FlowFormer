@@ -159,6 +159,7 @@ def sample_var(argv):
                 npy_images[i : i + current_batch_size] = images
 
     np.save(osp.join(output_dir, "images.npy"), npy_images)
+    print(f"Sampled {B} images in {time.time() - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":

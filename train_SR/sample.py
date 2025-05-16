@@ -129,7 +129,8 @@ def sample_sr(argv):
             save_png=False,
         )
 
-        npy_images[i : i + FLAGS.batch_size] = traj
+        images = traj.clone().mul_(255).cpu().numpy().astype(np.uint8)
+        npy_images[i : i + FLAGS.batch_size] = images
 
     np.save(osp.join(FLAGS.save_dir, "images.npy"), npy_images)
     # copy the class labels from data_path / "class_labels.npy"
@@ -137,6 +138,8 @@ def sample_sr(argv):
         osp.join(FLAGS.data_path, "class_labels.npy"),
         osp.join(FLAGS.save_dir, "class_labels.npy"),
     )
+
+    print(f"Sampled {len(dataset)} images in {time.time() - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
