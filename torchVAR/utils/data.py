@@ -145,15 +145,11 @@ class NumpyDataset(torch.utils.data.Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img = self.data[idx]
-        # convert it to a PIL image
+        img = self.data[idx]  # Shape: (C, H, W)
+        # Convert from (C, H, W) to (H, W, C) for PIL
+        img = np.transpose(img, (1, 2, 0))
         img = img.astype(np.uint8)
-        print("IMG SHAPE", img.shape)
         img = PImage.fromarray(img).convert("RGB")
-        print("IMG SIZE", img.size)
-        # Convert from (H, W, C) to (C, H, W) if needed
-        if img.shape[-1] == 3:
-            img = img.permute(2, 0, 1)
         if self.transform is not None:
             img = self.transform(img)
         return img, self.class_labels[idx].astype(np.int64)
@@ -192,11 +188,7 @@ def build_npy_dataset(
 
     # Load the numpy file
     data = np.load(osp.join(data_path, "images.npy"))
-    print("DATA SHAPE", data.shape)
-    print("DATA TYPE", data.dtype)
     class_labels = np.load(osp.join(data_path, "class_labels.npy"))
-    print("CLASS LABELS SHAPE", class_labels.shape)
-    print("CLASS LABELS TYPE", class_labels.dtype)
     if len(data.shape) != 4:
         raise ValueError(
             f"Expected numpy array of shape (N, H, W, C), got {data.shape}"
