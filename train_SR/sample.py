@@ -107,10 +107,6 @@ def sample_sr(argv):
     start_time = time.time()
 
     for i, (x0, y) in enumerate(dataloader):
-        if i % (FLAGS.batch_size * 20) == 0:
-            print(
-                f"Sampled {i * FLAGS.batch_size} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
-            )
         print(
             f"Sampling {i * FLAGS.batch_size} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
         )
