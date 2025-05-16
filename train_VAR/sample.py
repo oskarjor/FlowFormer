@@ -9,6 +9,7 @@ import json
 import time
 from torchvision.datasets import DatasetFolder
 from torchvision.datasets.folder import IMG_EXTENSIONS
+from tqdm import tqdm
 
 setattr(
     torch.nn.Linear, "reset_parameters", lambda self: None
@@ -197,8 +198,7 @@ def sample_var(argv):
     # sample
     start_time = time.time()
     with torch.inference_mode():
-        for i in range(0, B, FLAGS.batch_size):
-            print(f"Sampling {i} / {B} images")
+        for i in tqdm(range(0, B, FLAGS.batch_size)):
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
