@@ -136,7 +136,29 @@ def ema(source, target, decay):
         )
 
 
-def infiniteloop(dataloader):
+def infiniteloop(dataloader, class_conditional=True, has_target=True):
+    if class_conditional:
+        if has_target:
+            return x_x_y_loop(dataloader)
+        else:
+            return x_y_loop(dataloader)
+    else:
+        return x_loop(dataloader)
+
+
+def x_x_y_loop(dataloader):
     while True:
         for x0, x1, y in iter(dataloader):
             yield x0, x1, y
+
+
+def x_y_loop(dataloader):
+    while True:
+        for x0, y in iter(dataloader):
+            yield x0, y
+
+
+def x_loop(dataloader):
+    while True:
+        for x0 in iter(dataloader):
+            yield x0
