@@ -105,7 +105,7 @@ def sample_sr(argv):
     for i in range(0, len(dataset), FLAGS.batch_size):
         x0, y = next(datalooper)
         x0 = x0.to(device)
-        y = y.to(device) if FLAGS.class_conditional else None
+        y = y.to(device) if json_args["class_conditional"] else None
 
         traj = generate_samples(
             net_model,
