@@ -5,6 +5,7 @@ from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 
 
 def normalize_01_into_pm1(x):  # normalize x from [0, 1] to [-1, 1] by (x*2) - 1
@@ -291,3 +292,69 @@ def build_SR_dataset(
     )
 
     return train_set, val_set
+
+
+class SameClassBatchDataset(torch.utils.data.Dataset):
+    def __init__(self, dataset):
+        """
+        A wrapper dataset that ensures all images in a batch come from the same class.
+        Takes advantage of ImageNet's folder structure where each class is in its own folder.
+        Args:
+            dataset: The base dataset (should be an ImageNet dataset)
+        """
+        self.dataset = dataset
+        # Get the class folders and their corresponding indices
+        self.class_folders = dataset.classes
+        self.class_to_idx = dataset.class_to_idx
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        return self.dataset[idx]
+
+    def get_batch_indices(self, batch_size, class_idx=None):
+        """
+        Get indices for a batch where all images are from the same class.
+        Args:
+            batch_size: Size of the batch to generate
+        Returns:
+            List of indices for the batch
+        """
+        if class_idx is None:
+            # Randomly select a class folder
+            class_folder = np.random.choice(self.class_folders)
+            class_idx = self.class_to_idx[class_folder]
+
+        # Get all samples for this class
+        class_samples = [
+            i for i, (_, c) in enumerate(self.dataset.samples) if c == class_idx
+        ]
+
+        # Randomly select batch_size samples from this class
+        if len(class_samples) < batch_size:
+            # If we don't have enough samples, sample with replacement
+            batch_indices = np.random.choice(
+                class_samples, size=batch_size, replace=True
+            )
+        else:
+            # Otherwise sample without replacement
+            batch_indices = np.random.choice(
+                class_samples, size=batch_size, replace=False
+            )
+        return batch_indices.tolist()
+
+
+class SameClassBatchDataLoader(DataLoader):
+    def __init__(self, dataset, batch_size, shuffle=True, num_workers=0):
+        super().__init__(dataset, batch_size, shuffle, num_workers)
+
+    def __iter__(self):
+        return super().__iter__()
+
+    def __next__(self, class_idx=None):
+        batch_indices = self.dataset.get_batch_indices(
+            self.batch_size, class_idx=class_idx
+        )
+        batch = [self.dataset[i] for i in batch_indices]
+        return batch
