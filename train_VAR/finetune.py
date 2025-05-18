@@ -24,11 +24,10 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("model_path", None, help="model path")
-flags.DEFINE_string("save_dir", "", help="save directory")
+flags.DEFINE_string("save_dir", None, help="save directory")
 flags.DEFINE_string("input_data_path", None, help="input data path")
 flags.DEFINE_string("target_data_path", None, help="target data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
-flags.DEFINE_integer("time_steps", 100, help="time steps")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 
 use_cuda = torch.cuda.is_available()
