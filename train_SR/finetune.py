@@ -124,7 +124,7 @@ def finetune_sr(argv):
         root=osp.join(FLAGS.input_data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
-        transform=None,
+        transform=input_transform,
     )
     target_data = DatasetFolder(
         root=osp.join(FLAGS.target_data_path, "val"),
@@ -150,8 +150,8 @@ def finetune_sr(argv):
 
     for _ in range(10):
         class_idx = np.random.randint(0, NUM_CLASSES)
-        x0 = next(x0_dataloader, class_idx)
-        x1 = next(x1_dataloader, class_idx)
+        x0, y0 = next(x0_dataloader, class_idx)
+        x1, y1 = next(x1_dataloader, class_idx)
         print(x0.shape, x1.shape)
         break
 
