@@ -346,8 +346,8 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
 
 
 class SameClassBatchDataLoader(DataLoader):
-    def __init__(self, dataset, batch_size, shuffle=True, num_workers=0):
-        super().__init__(dataset, batch_size, shuffle, num_workers)
+    def __init__(self, dataset, batch_size, num_workers=0):
+        super().__init__(dataset, batch_size, num_workers)
 
     def __iter__(self):
         return super().__iter__()

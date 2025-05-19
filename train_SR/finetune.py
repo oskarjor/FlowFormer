@@ -133,14 +133,12 @@ def finetune_sr(argv):
     x0_dataloader = SameClassBatchDataLoader(
         x0_dataset,
         batch_size=FLAGS.batch_size,
-        shuffle=True,
         num_workers=FLAGS.num_workers,
     )
 
     x1_dataloader = SameClassBatchDataLoader(
         x1_dataset,
         batch_size=FLAGS.batch_size,
-        shuffle=True,
         num_workers=FLAGS.num_workers,
     )
 
