@@ -127,6 +127,11 @@ def finetune_sr(argv):
         transform=target_transform,
     )
 
+    for image, label in input_data:
+        print("IMAGE SHAPE: ", image.shape)
+        print("CLASS LABEL: ", label)
+        if image.shape[1] != image.shape[2] != 512:
+            raise ValueError("Image shape is not 512x512")
     x0_dataset = SameClassBatchDataset(input_data)
     x1_dataset = SameClassBatchDataset(target_data)
 

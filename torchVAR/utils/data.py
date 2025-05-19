@@ -359,7 +359,6 @@ class SameClassBatchDataLoader(DataLoader):
         batch = [self.dataset[i] for i in batch_indices]
         # debug
         for i in batch:
-            print(len(i))
-            print(i[0].shape)
-            print(i[1])
+            print("IMAGE SHAPE: ", i[0].shape)
+            print("CLASS LABEL: ", i[1])
         return default_collate(batch)
