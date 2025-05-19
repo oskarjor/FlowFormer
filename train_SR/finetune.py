@@ -94,15 +94,21 @@ def finetune_sr(argv):
     model_weights = torch.load(FLAGS.model_path, map_location=device)
     net_model.load_state_dict(model_weights["net_model"])
 
+    if json_args["naive_upscaling"] == "nearest":
+        upscaling_mode = InterpolationMode.NEAREST
+    elif json_args["naive_upscaling"] == "lanczos":
+        upscaling_mode = InterpolationMode.LANCZOS
+    else:
+        raise ValueError(f"Unknown upscaling mode: {json_args['naive_upscaling']}")
+
     # finetune
     input_transform, target_transform = (
         transforms.Compose(
             [
                 transforms.Resize(
                     json_args["post_image_size"],
-                    interpolation=InterpolationMode.LANCZOS,
+                    interpolation=upscaling_mode,
                 ),
-                transforms.CenterCrop(json_args["post_image_size"]),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
             ]
