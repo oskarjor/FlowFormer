@@ -106,7 +106,7 @@ def finetune_sr(argv):
         transforms.Compose(
             [
                 transforms.Resize(
-                    json_args["post_image_size"],
+                    (json_args["post_image_size"], json_args["post_image_size"]),
                     interpolation=upscaling_mode,
                 ),
                 transforms.ToTensor(),
@@ -121,23 +121,18 @@ def finetune_sr(argv):
         ),
     )
     input_data = DatasetFolder(
-        root=osp.join(FLAGS.input_data_path, "train"),
+        root=osp.join(FLAGS.input_data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
     )
     target_data = DatasetFolder(
-        root=osp.join(FLAGS.target_data_path, "train"),
+        root=osp.join(FLAGS.target_data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=target_transform,
     )
 
-    for image, label in input_data:
-        print("IMAGE SHAPE: ", image.shape)
-        print("CLASS LABEL: ", label)
-        if image.shape[1] != image.shape[2] != 512:
-            raise ValueError("Image shape is not 512x512")
     x0_dataset = SameClassBatchDataset(input_data)
     x1_dataset = SameClassBatchDataset(target_data)
 
