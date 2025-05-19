@@ -113,7 +113,7 @@ def sample_sr(argv):
         ]
     )
     input_data = DatasetFolder(
-        root=osp.join(FLAGS.input_data_path, "val"),
+        root=osp.join(FLAGS.data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
