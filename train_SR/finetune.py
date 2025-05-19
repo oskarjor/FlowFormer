@@ -124,7 +124,7 @@ def finetune_sr(argv):
         root=osp.join(FLAGS.input_data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
-        transform=input_transform,
+        transform=None,
     )
     target_data = DatasetFolder(
         root=osp.join(FLAGS.target_data_path, "val"),

@@ -12,6 +12,7 @@ var_*.pth
 torchVAR/local_output/*
 *.ipynb
 .wandb_api_key
+sandbox/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

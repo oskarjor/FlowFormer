@@ -311,7 +311,8 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        return self.dataset[idx]
+        x, y = self.dataset[idx]
+        return x, y
 
     def get_batch_indices(self, batch_size, class_idx=None):
         """
@@ -357,8 +358,4 @@ class SameClassBatchDataLoader(DataLoader):
             self.batch_size, class_idx=class_idx
         )
         batch = [self.dataset[i] for i in batch_indices]
-        # debug
-        for i in batch:
-            print("IMAGE SHAPE: ", i[0].shape)
-            print("CLASS LABEL: ", i[1])
         return default_collate(batch)
