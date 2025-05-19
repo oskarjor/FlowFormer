@@ -94,15 +94,21 @@ def finetune_sr(argv):
     model_weights = torch.load(FLAGS.model_path, map_location=device)
     net_model.load_state_dict(model_weights["net_model"])
 
+    if json_args["naive_upscaling"] == "nearest":
+        upscaling_mode = InterpolationMode.NEAREST
+    elif json_args["naive_upscaling"] == "lanczos":
+        upscaling_mode = InterpolationMode.LANCZOS
+    else:
+        raise ValueError(f"Unknown upscaling mode: {json_args['naive_upscaling']}")
+
     # finetune
     input_transform, target_transform = (
         transforms.Compose(
             [
                 transforms.Resize(
-                    json_args["post_image_size"],
-                    interpolation=InterpolationMode.LANCZOS,
+                    (json_args["post_image_size"], json_args["post_image_size"]),
+                    interpolation=upscaling_mode,
                 ),
-                transforms.CenterCrop(json_args["post_image_size"]),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
             ]
@@ -115,23 +121,18 @@ def finetune_sr(argv):
         ),
     )
     input_data = DatasetFolder(
-        root=osp.join(FLAGS.input_data_path, "train"),
+        root=osp.join(FLAGS.input_data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
     )
     target_data = DatasetFolder(
-        root=osp.join(FLAGS.target_data_path, "train"),
+        root=osp.join(FLAGS.target_data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=target_transform,
     )
 
-    for image, label in input_data:
-        print("IMAGE SHAPE: ", image.shape)
-        print("CLASS LABEL: ", label)
-        if image.shape[1] != image.shape[2] != 512:
-            raise ValueError("Image shape is not 512x512")
     x0_dataset = SameClassBatchDataset(input_data)
     x1_dataset = SameClassBatchDataset(target_data)
 
