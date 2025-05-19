@@ -209,7 +209,7 @@ def sample_var(argv):
                     cfg=cfg,
                     top_k=900,
                     top_p=0.95,
-                    g_seed=seed,
+                    g_seed=None,
                     more_smooth=more_smooth,
                 )
 
