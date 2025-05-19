@@ -357,4 +357,7 @@ class SameClassBatchDataLoader(DataLoader):
             self.batch_size, class_idx=class_idx
         )
         batch = [self.dataset[i] for i in batch_indices]
+        # debug
+        for i in batch:
+            print(i.shape)
         return default_collate(batch)
