@@ -80,10 +80,6 @@ def generate_samples(
     if parallel:
         model_ = model_.module.to(device)
 
-    # Add diagnostic prints
-    print("Starting ODE solve...")
-    start_time = time.time()
-
     node_ = NeuralODE(model_, solver="euler", sensitivity="adjoint")
     with torch.no_grad():
         if x0 is None:
@@ -96,29 +92,14 @@ def generate_samples(
             else:
                 generated_class_list = y
 
-            # Add function evaluation counter
-            eval_count = 0
-
-            def func_with_counter(t, x):
-                nonlocal eval_count
-                eval_count += 1
-                if eval_count % 10 == 0:
-                    print(
-                        f"Function evaluation {eval_count}, time: {time.time() - start_time:.2f}s"
-                    )
-                return model_(t, x, generated_class_list)
-
-            print("Starting ODE integration...")
             traj = torchdiffeq.odeint(
-                func_with_counter,
+                lambda t, x: model_(t, x, generated_class_list),
                 x0,
                 torch.linspace(0, 1, time_steps, device=device),
                 atol=1e-4,
                 rtol=1e-4,
                 method="dopri5",
             )
-            print(f"ODE solve completed. Total function evaluations: {eval_count}")
-            print(f"Total time: {time.time() - start_time:.2f}s")
         else:
             traj = node_.trajectory(
                 x0,
