@@ -106,7 +106,7 @@ def finetune_sr(argv):
         transforms.Compose(
             [
                 transforms.Resize(
-                    (json_args["post_image_size"], json_args["post_image_size"]),
+                    json_args["post_image_size"],
                     interpolation=upscaling_mode,
                 ),
                 transforms.ToTensor(),
@@ -115,6 +115,11 @@ def finetune_sr(argv):
         ),
         transforms.Compose(
             [
+                transforms.Resize(
+                    json_args["post_image_size"] * 1.125,
+                    interpolation=InterpolationMode.LANCZOS,
+                ),
+                transforms.CenterCrop(json_args["post_image_size"]),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
             ]
@@ -153,6 +158,7 @@ def finetune_sr(argv):
         x0, y0 = next(x0_dataloader, class_idx)
         x1, y1 = next(x1_dataloader, class_idx)
         print(x0.shape, x1.shape)
+        print(y0, y1)
         break
 
 
