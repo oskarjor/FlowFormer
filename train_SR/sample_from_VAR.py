@@ -4,10 +4,9 @@ import torch
 import os
 import numpy as np
 import os.path as osp
-import shutil
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
-from utils_SR import infiniteloop, generate_samples
+from utils_SR import generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
 from torchVAR.utils.data import SameClassBatchDataset, SameClassBatchDataLoader
@@ -132,7 +131,7 @@ def sample_sr(argv):
 
     start_time = time.time()
 
-    for i, (x0, y) in enumerate(x0_dataloader):
+    for i, (x0, y) in tqdm(enumerate(x0_dataloader)):
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
 
