@@ -144,8 +144,8 @@ def finetune_sr(argv):
 
     for _ in range(10):
         class_idx = np.random.randint(0, NUM_CLASSES)
-        x0 = x0_dataloader.next(class_idx)
-        x1 = x1_dataloader.next(class_idx)
+        x0 = next(x0_dataloader, class_idx)
+        x1 = next(x1_dataloader, class_idx)
         print(x0.shape, x1.shape)
         break
 
