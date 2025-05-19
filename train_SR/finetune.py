@@ -153,6 +153,7 @@ def finetune_sr(argv):
         x0, y0 = next(x0_dataloader, class_idx)
         x1, y1 = next(x1_dataloader, class_idx)
         print(x0.shape, x1.shape)
+        print(y0, y1)
         break
 
 
