@@ -5,7 +5,7 @@ from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, default_collate
 
 
 def normalize_01_into_pm1(x):  # normalize x from [0, 1] to [-1, 1] by (x*2) - 1
@@ -357,4 +357,4 @@ class SameClassBatchDataLoader(DataLoader):
             self.batch_size, class_idx=class_idx
         )
         batch = [self.dataset[i] for i in batch_indices]
-        return batch
+        return default_collate(batch)
