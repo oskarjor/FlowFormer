@@ -1,15 +1,18 @@
 ################## 1. Download checkpoints and build models
 import os
 import os.path as osp
-import torch, torchvision
+import torch
 import random
 import numpy as np
-import PIL.Image as PImage, PIL.ImageDraw as PImageDraw
 import json
 import time
-from torchvision.datasets import DatasetFolder
-from torchvision.datasets.folder import IMG_EXTENSIONS
+from absl import app, flags
 from tqdm import tqdm
+from torchVAR.models import build_vae_var
+from torchVAR.utils.imagenet_utils import (
+    get_imagenet_class_mapping,
+    save_batch_to_imagenet_structure,
+)
 
 setattr(
     torch.nn.Linear, "reset_parameters", lambda self: None
@@ -17,9 +20,7 @@ setattr(
 setattr(
     torch.nn.LayerNorm, "reset_parameters", lambda self: None
 )  # disable default parameter init for faster speed
-from torchVAR.models import VQVAE, build_vae_var
 
-from absl import app, flags
 
 FLAGS = flags.FLAGS
 
@@ -39,60 +40,6 @@ flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 flags.DEFINE_list("return_sizes", [16], help="return sizes")
 flags.DEFINE_integer("batch_size", 64, help="batch size")
 flags.DEFINE_string("split", "val", help="split")
-
-
-def pil_loader(path):
-    with open(path, "rb") as f:
-        img: PImage.Image = PImage.open(f).convert("RGB")
-    return img
-
-
-def get_imagenet_class_mapping():
-    """Get ImageNet class name to index mapping."""
-    # Load ImageNet class names from torchvision
-    train_set = DatasetFolder(
-        root=osp.join("./imagenet", FLAGS.split),
-        loader=pil_loader,
-        extensions=IMG_EXTENSIONS,
-        transform=None,
-    )
-    class_to_idx = train_set.class_to_idx
-    return class_to_idx
-
-
-def save_batch_to_imagenet_structure(images, class_labels, start_idx, class_to_idx):
-    """
-    Save a batch of images in ImageNet-like directory structure.
-    Args:
-        images: numpy array of shape (B, C, H, W) with values in [0, 255]
-        class_labels: numpy array of shape (B,) with class indices
-        output_dir: base directory to save images
-        start_idx: starting index for image naming
-        class_to_idx: mapping from class names to indices
-    """
-    # Create val directory
-    output_dir = osp.join(
-        f"./{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}_imagenet", FLAGS.split
-    )
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Create reverse mapping from index to class name
-    idx_to_class = {v: k for k, v in class_to_idx.items()}
-
-    # Save images
-    for i, (img, label) in enumerate(zip(images, class_labels)):
-        # Get class name from index
-        class_name = idx_to_class[label]
-
-        # Create class directory if it doesn't exist
-        class_dir = osp.join(output_dir, class_name)
-        os.makedirs(class_dir, exist_ok=True)
-
-        # Convert from (C, H, W) to (H, W, C) and save as JPEG
-        img = np.transpose(img, (1, 2, 0))
-        img_pil = PImage.fromarray(img)
-        img_path = osp.join(class_dir, f"sample_{start_idx + i}.JPEG")
-        img_pil.save(img_path, subsampling=0, quality=95)
 
 
 def sample_var(argv):
@@ -179,7 +126,7 @@ def sample_var(argv):
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
 
     # Get ImageNet class mapping
-    class_to_idx = get_imagenet_class_mapping()
+    class_to_idx = get_imagenet_class_mapping(FLAGS.split)
 
     # Save class mapping
     mapping_dir = f"./{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}_imagenet"
@@ -217,7 +164,16 @@ def sample_var(argv):
                 batch_labels = class_labels[i : i + current_batch_size]
 
                 # Save batch immediately
-                save_batch_to_imagenet_structure(images, batch_labels, i, class_to_idx)
+                save_batch_to_imagenet_structure(
+                    images,
+                    batch_labels,
+                    i,
+                    class_to_idx,
+                    osp.join(
+                        f"./{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}_imagenet",
+                        FLAGS.split,
+                    ),
+                )
 
     print(f"Sampled {B} images in {time.time() - start_time:.2f} seconds")
 
