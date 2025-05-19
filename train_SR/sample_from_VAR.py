@@ -155,9 +155,10 @@ def sample_sr(argv):
         )
 
         images = traj.clone().mul_(255).cpu().numpy().astype(np.uint8)
+        class_labels = y.clone().cpu().numpy().astype(np.uint8)
         save_batch_to_imagenet_structure(
             images,
-            y,
+            class_labels,
             i,
             class_to_idx,
             osp.join(
