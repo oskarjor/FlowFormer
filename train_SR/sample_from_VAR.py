@@ -148,7 +148,7 @@ def sample_sr(argv):
             class_cond=json_args["class_conditional"],
             num_classes=NUM_CLASSES,
             net_="normal",
-            num_samples=json_args["batch_size"],
+            num_samples=FLAGS.batch_size,
             x0=x0,
             y=y,
             save_png=False,
@@ -163,7 +163,7 @@ def sample_sr(argv):
             osp.join(
                 FLAGS.save_dir,
                 osp.join(
-                    json_args["model_path"],
+                    FLAGS.save_dir,
                     FLAGS.split,
                 ),
             ),
