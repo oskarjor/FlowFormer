@@ -16,9 +16,8 @@ module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
 pwd
-export WANDB_API_KEY=$(cat ~/FlowFormer/.wandb_api_key)
 
-python train_SR/sample.py \
+python train_SR/finetune.py \
 	--json_path="./results/otcfm/22635170/flags.json" \
 	--save_dir="./output/SR/$SLURM_JOB_ID" \
 	--model_path="./results/otcfm/22635170/otcfm_256_to_512_weights_step_400000.pt" \
