@@ -1,6 +1,8 @@
 data/
 wandb/
 imagenet/
+var_d16_imagenet/
+var_d30_imagenet/
 *.out
 */.DS_Store
 .DS_Store
