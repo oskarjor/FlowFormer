@@ -163,7 +163,7 @@ def sample_sr(argv):
             osp.join(
                 FLAGS.save_dir,
                 osp.join(
-                    json_args["model_path"],
+                    FLAGS.save_dir,
                     FLAGS.split,
                 ),
             ),
