@@ -326,11 +326,6 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
         if class_idx is None:
             # Randomly select a class folder
             class_idx = np.random.randint(0, self.num_classes)
-            print(f"Selected class index: {class_idx}")
-            print(f"Class folder: {self.class_folders[class_idx]}")
-            print(f"Class to idx: {self.class_to_idx[self.class_folders[class_idx]]}")
-            print(f"Num class_folders: {len(self.class_folders)}")
-            print(f"Num class_to_idx: {len(self.class_to_idx)}")
 
         # Get all samples for this class
         class_samples = [
