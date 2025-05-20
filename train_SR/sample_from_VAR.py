@@ -147,8 +147,6 @@ def sample_sr(argv):
         if y is not None:
             all_ys.update(y.tolist())
 
-        print(f"Generating samples for {json_args['batch_size']} images")
-
         traj = generate_samples(
             net_model,
             parallel=False,
