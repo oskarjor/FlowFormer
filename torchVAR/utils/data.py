@@ -295,7 +295,7 @@ def build_SR_dataset(
 
 
 class SameClassBatchDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset):
+    def __init__(self, dataset, num_classes):
         """
         A wrapper dataset that ensures all images in a batch come from the same class.
         Takes advantage of ImageNet's folder structure where each class is in its own folder.
@@ -306,6 +306,7 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
         # Get the class folders and their corresponding indices
         self.class_folders = dataset.classes
         self.class_to_idx = dataset.class_to_idx
+        self.num_classes = num_classes
 
     def __len__(self):
         return len(self.dataset)
@@ -324,8 +325,7 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
         """
         if class_idx is None:
             # Randomly select a class folder
-            class_folder = np.random.choice(self.class_folders)
-            class_idx = self.class_to_idx[class_folder]
+            class_idx = np.random.randint(0, self.num_classes)
 
         # Get all samples for this class
         class_samples = [

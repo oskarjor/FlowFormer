@@ -126,7 +126,7 @@ def sample_sr(argv):
         transform=input_transform,
     )
 
-    x0_dataset = SameClassBatchDataset(input_data)
+    x0_dataset = SameClassBatchDataset(input_data, NUM_CLASSES)
 
     x0_dataloader = SameClassBatchDataLoader(
         x0_dataset,

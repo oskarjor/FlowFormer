@@ -138,8 +138,8 @@ def finetune_sr(argv):
         transform=target_transform,
     )
 
-    x0_dataset = SameClassBatchDataset(input_data)
-    x1_dataset = SameClassBatchDataset(target_data)
+    x0_dataset = SameClassBatchDataset(input_data, NUM_CLASSES)
+    x1_dataset = SameClassBatchDataset(target_data, NUM_CLASSES)
 
     x0_dataloader = SameClassBatchDataLoader(
         x0_dataset,
