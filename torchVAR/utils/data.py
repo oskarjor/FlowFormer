@@ -354,7 +354,6 @@ class SameClassBatchDataLoader(DataLoader):
         return super().__iter__()
 
     def __next__(self, class_idx=None):
-        print(f"Getting next batch with class_idx: {class_idx}")
         batch_indices = self.dataset.get_batch_indices(
             self.batch_size, class_idx=class_idx
         )
