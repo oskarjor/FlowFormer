@@ -138,9 +138,14 @@ def sample_sr(argv):
 
     start_time = time.time()
 
+    all_ys = set()
+
     for i, (x0, y) in tqdm(enumerate(x0_dataloader)):
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
+
+        if y is not None:
+            all_ys.update(y.tolist())
 
         print(f"Generating samples for {json_args['batch_size']} images")
 
@@ -172,6 +177,8 @@ def sample_sr(argv):
     print(
         f"Sampled {len(x0_dataloader)} images in {time.time() - start_time:.2f} seconds"
     )
+    if json_args["class_conditional"]:
+        print(f"Number of unique classes: {len(all_ys)}")
 
 
 if __name__ == "__main__":
