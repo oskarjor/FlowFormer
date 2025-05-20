@@ -47,6 +47,12 @@ def sample_sr(argv):
         raise ValueError("save_dir is required")
     json_args = read_json_flags(json_path)
 
+    # Save flags to json file
+    flags_dict = flags.FLAGS.flag_values_dict()
+    flags_path = os.path.join(FLAGS.save_dir, "flags.json")
+    with open(flags_path, "w") as f:
+        json.dump(flags_dict, f, indent=4)
+
     # MODELS
     if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
         num_heads = 4
