@@ -161,13 +161,7 @@ def sample_sr(argv):
             class_labels,
             i,
             class_to_idx,
-            osp.join(
-                FLAGS.save_dir,
-                osp.join(
-                    FLAGS.save_dir,
-                    FLAGS.split,
-                ),
-            ),
+            osp.join(FLAGS.save_dir, FLAGS.split),
         )
     print(
         f"Sampled {len(x0_dataloader)} images in {time.time() - start_time:.2f} seconds"
