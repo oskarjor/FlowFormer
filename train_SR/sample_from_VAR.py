@@ -138,7 +138,8 @@ def sample_sr(argv):
 
     start_time = time.time()
 
-    for i, (x0, y) in tqdm(enumerate(x0_dataloader)):
+    for i in tqdm(range(len(x0_dataloader) // FLAGS.batch_size)):
+        x0, y = next(x0_dataloader)
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
 
