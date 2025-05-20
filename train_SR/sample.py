@@ -4,11 +4,13 @@ import torch
 import os
 import numpy as np
 import os.path as osp
-import shutil
-from torchVAR.utils.data import build_SR_dataset, build_npy_dataset
-from utils_SR import infiniteloop, generate_samples
+from utils_SR import generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 import time
+from torchVAR.utils.imagenet_utils import (
+    save_batch_to_imagenet_structure,
+    get_imagenet_class_mapping,
+)
 
 FLAGS = flags.FLAGS
 
@@ -19,6 +21,9 @@ flags.DEFINE_string("data_path", None, help="data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("time_steps", 100, help="time steps")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
+flags.DEFINE_integer("num_samples", 10000, help="number of samples")
+flags.DEFINE_string("split", "val", help="split")
+
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -38,21 +43,6 @@ def sample_sr(argv):
     if FLAGS.save_dir is None:
         raise ValueError("save_dir is required")
     json_args = read_json_flags(json_path)
-
-    # build dataset
-    dataset = build_npy_dataset(
-        data_path=FLAGS.data_path,
-        post_image_size=json_args["post_image_size"],
-        naive_upscaling=json_args["naive_upscaling"],
-    )
-
-    dataloader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=FLAGS.batch_size,
-        shuffle=True,
-        num_workers=FLAGS.num_workers,
-        drop_last=True,
-    )
 
     # MODELS
     if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
@@ -101,24 +91,22 @@ def sample_sr(argv):
     net_model.eval()
 
     os.makedirs(FLAGS.save_dir, exist_ok=True)
-
-    npy_images = np.zeros(
-        (len(dataset), 3, json_args["post_image_size"], json_args["post_image_size"]),
-        dtype=np.uint8,
-    )
     start_time = time.time()
+
+    class_to_idx = get_imagenet_class_mapping(FLAGS.split)
 
     print("Sampling...")
 
-    for i, (x0, y) in enumerate(dataloader):
-        print(
-            f"Sampling {i * FLAGS.batch_size} / {len(dataset)} images - {time.time() - start_time:.2f} seconds"
-        )
-        print(f"x0: {x0.shape}, y: {y.shape}")
-        x0 = x0.to(device)
-        y = y.to(device) if json_args["class_conditional"] else None
+    for i in range(FLAGS.num_samples // FLAGS.batch_size):
+        print(f"Sampling {i * FLAGS.batch_size} / {FLAGS.num_samples} images")
 
-        print(f"Generating samples for {json_args['batch_size']} images")
+        x0 = torch.randn(
+            FLAGS.batch_size,
+            3,
+            json_args["post_image_size"],
+            json_args["post_image_size"],
+        ).to(device)
+        y = torch.randint(0, NUM_CLASSES, (FLAGS.batch_size,)).to(device)
 
         traj = generate_samples(
             net_model,
@@ -137,16 +125,18 @@ def sample_sr(argv):
         )
 
         images = traj.clone().mul_(255).cpu().numpy().astype(np.uint8)
-        npy_images[i * FLAGS.batch_size : (i + 1) * FLAGS.batch_size] = images
+        class_labels = y.clone().cpu().numpy().astype(np.uint8)
+        save_batch_to_imagenet_structure(
+            images,
+            class_labels,
+            i,
+            class_to_idx,
+            osp.join(FLAGS.save_dir, FLAGS.split),
+        )
 
-    np.save(osp.join(FLAGS.save_dir, "images.npy"), npy_images)
-    # copy the class labels from data_path / "class_labels.npy"
-    shutil.copy(
-        osp.join(FLAGS.data_path, "class_labels.npy"),
-        osp.join(FLAGS.save_dir, "class_labels.npy"),
+    print(
+        f"Sampled {FLAGS.num_samples} images in {time.time() - start_time:.2f} seconds"
     )
-
-    print(f"Sampled {len(dataset)} images in {time.time() - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":

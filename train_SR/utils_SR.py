@@ -80,7 +80,6 @@ def generate_samples(
     if parallel:
         model_ = model_.module.to(device)
 
-    node_ = NeuralODE(model_, solver="euler", sensitivity="adjoint")
     with torch.no_grad():
         if x0 is None:
             x0 = torch.randn(num_samples, 3, image_size, image_size, device=device)
@@ -101,6 +100,7 @@ def generate_samples(
                 method="dopri5",
             )
         else:
+            node_ = NeuralODE(model_, solver="euler", sensitivity="adjoint")
             traj = node_.trajectory(
                 x0,
                 t_span=torch.linspace(0, 1, time_steps, device=device),

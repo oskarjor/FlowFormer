@@ -126,7 +126,7 @@ def sample_sr(argv):
         transform=input_transform,
     )
 
-    x0_dataset = SameClassBatchDataset(input_data)
+    x0_dataset = SameClassBatchDataset(input_data, NUM_CLASSES)
 
     x0_dataloader = SameClassBatchDataLoader(
         x0_dataset,
@@ -141,8 +141,6 @@ def sample_sr(argv):
     for i, (x0, y) in tqdm(enumerate(x0_dataloader)):
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
-
-        print(f"Generating samples for {json_args['batch_size']} images")
 
         traj = generate_samples(
             net_model,
