@@ -138,7 +138,7 @@ def sample_sr(argv):
 
     start_time = time.time()
 
-    for i in range(len(x0_dataloader) // FLAGS.batch_size):
+    for i in range(len(x0_dataloader)):
         x0, y = next(x0_dataloader)
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
