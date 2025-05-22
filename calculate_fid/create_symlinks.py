@@ -7,6 +7,7 @@ def create_symlinks(source_dir):
     """
     Creates symbolic links in a target directory for all files found in source_dir and its subdirectories.
     The target directory is automatically created by appending '_compressed' to the source directory path.
+    All symlinks will be created with lowercase extensions to match pytorch-fid requirements.
 
     Args:
         source_dir (str): The path to the source directory containing image files (can have subfolders).
@@ -27,6 +28,7 @@ def create_symlinks(source_dir):
     image_extensions = [
         ".jpg",
         ".jpeg",
+        ".JPEG",
         ".png",
         ".gif",
         ".bmp",
@@ -41,10 +43,16 @@ def create_symlinks(source_dir):
     for current_path, _, files in os.walk(source_dir):
         for filename in files:
             source_file_path = pathlib.Path(current_path) / filename
-            target_symlink_path = target_path / filename
+            # Convert extension to lowercase for the target symlink
+            target_filename = (
+                filename.rsplit(".", 1)[0] + "." + filename.rsplit(".", 1)[1].lower()
+            )
+            target_symlink_path = target_path / target_filename
 
             # Check if the file has a common image extension
-            if source_file_path.suffix.lower() not in image_extensions:
+            if source_file_path.suffix.lower() not in [
+                ext.lower() for ext in image_extensions
+            ]:
                 continue
 
             try:
