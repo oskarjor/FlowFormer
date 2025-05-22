@@ -1,24 +1,24 @@
 from absl import app, flags
 import json
 import torch
-import os
 import numpy as np
 import os.path as osp
-import shutil
 from torchVAR.utils.data import (
     SameClassBatchDataset,
-    build_dataset,
     pil_loader,
     SameClassBatchDataLoader,
 )
-from utils_SR import infiniteloop, generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
-import time
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 from torchVAR.utils.data import normalize_01_into_pm1
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
-from torch.utils.data import DataLoader
+from torchcfm.conditional_flow_matching import (
+    ExactOptimalTransportConditionalFlowMatcher,
+    ConditionalFlowMatcher,
+    TargetConditionalFlowMatcher,
+    VariancePreservingConditionalFlowMatcher,
+)
 
 FLAGS = flags.FLAGS
 
@@ -42,6 +42,7 @@ def read_json_flags(json_path):
 def finetune_sr(argv):
     NUM_CLASSES = 1000
 
+    # READ JSON FLAGS OF PRETRAINED MODEL
     json_path = FLAGS.json_path
     if json_path is None:
         raise ValueError("json_path is required")
@@ -152,6 +153,24 @@ def finetune_sr(argv):
         batch_size=FLAGS.batch_size,
         num_workers=FLAGS.num_workers,
     )
+
+    #################################
+    #            OT-CFM
+    #################################
+
+    sigma = 0.0
+    if FLAGS.model == "otcfm":
+        FM = ExactOptimalTransportConditionalFlowMatcher(sigma=sigma)
+    elif FLAGS.model == "icfm":
+        FM = ConditionalFlowMatcher(sigma=sigma)
+    elif FLAGS.model == "fm":
+        FM = TargetConditionalFlowMatcher(sigma=sigma)
+    elif FLAGS.model == "si":
+        FM = VariancePreservingConditionalFlowMatcher(sigma=sigma)
+    else:
+        raise NotImplementedError(
+            f"Unknown model {FLAGS.model}, must be one of ['otcfm', 'icfm', 'fm', 'si']"
+        )
 
     for _ in range(10):
         class_idx = np.random.randint(0, NUM_CLASSES)
