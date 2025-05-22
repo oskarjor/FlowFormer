@@ -97,16 +97,26 @@ def sample_sr(argv):
 
     print("Sampling...")
 
-    for i in range(FLAGS.num_samples // FLAGS.batch_size):
+    num_samples_per_class = FLAGS.num_samples // NUM_CLASSES
+
+    y_values = [[i] * num_samples_per_class for i in range(NUM_CLASSES)]
+    y_values = np.concatenate(y_values)
+
+    for i in range(FLAGS.num_samples // FLAGS.batch_size + 1):
         print(f"Sampling {i * FLAGS.batch_size} / {FLAGS.num_samples} images")
 
+        y = torch.from_numpy(
+            y_values[i * FLAGS.batch_size : (i + 1) * FLAGS.batch_size]
+        ).to(device)
+
+        current_batch_size = min(FLAGS.batch_size, y.shape[0])
+
         x0 = torch.randn(
-            FLAGS.batch_size,
+            current_batch_size,
             3,
             json_args["post_image_size"],
             json_args["post_image_size"],
         ).to(device)
-        y = torch.randint(0, NUM_CLASSES, (FLAGS.batch_size,)).to(device)
 
         traj = generate_samples(
             net_model,
@@ -118,7 +128,7 @@ def sample_sr(argv):
             class_cond=json_args["class_conditional"],
             num_classes=NUM_CLASSES,
             net_="normal",
-            num_samples=json_args["batch_size"],
+            num_samples=current_batch_size,
             x0=x0,
             y=y,
             save_png=False,
