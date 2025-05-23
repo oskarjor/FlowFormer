@@ -10,7 +10,7 @@ import json
 
 import torch
 from absl import app, flags
-from utils_SR import ema, generate_samples, infiniteloop
+from utils_SR import ema, generate_samples, infiniteloop, warmup_lr, format_time
 
 from torchVAR.utils.data import build_SR_dataset
 
@@ -71,18 +71,6 @@ flags.DEFINE_integer("validation_steps", 100, help="number of validation steps")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
-
-
-def warmup_lr(step):
-    return min(step, FLAGS.warmup) / FLAGS.warmup
-
-
-def format_time(seconds):
-    """Format time in seconds to a human readable string."""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = int(seconds % 60)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 def train(argv):
@@ -218,7 +206,9 @@ def train(argv):
 
     ema_model = copy.deepcopy(net_model)
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
-    sched = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=warmup_lr)
+    sched = torch.optim.lr_scheduler.LambdaLR(
+        optim, lr_lambda=lambda step: warmup_lr(step, FLAGS.warmup)
+    )
     if FLAGS.parallel:
         print(
             "Warning: parallel training is performing slightly worse than single GPU training due to statistics computation in dataparallel. We recommend to train over a single GPU, which requires around 8 Gb of GPU memory."
