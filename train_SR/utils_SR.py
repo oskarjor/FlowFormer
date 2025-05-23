@@ -148,7 +148,7 @@ def ema(source, target, decay):
 
 
 def infiniteloop(dataloader):
-    # values can be either (x0, x1, y) or (x0, y)
+    # values can be either (x0, x1, y) or (x1, y) or (x1)
     while True:
         for values in iter(dataloader):
             yield values
