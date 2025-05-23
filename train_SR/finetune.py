@@ -191,9 +191,10 @@ def finetune_sr(argv):
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
 
+        print("Getting batch...")
         x0, y0 = next(x0_datalooper)
         print(y0)
-        x1, y1 = next(x1_datalooper, y0)
+        x1, y1 = next(x1_datalooper, y0[0])
         print(y1)
 
         x0 = x0.to(device)

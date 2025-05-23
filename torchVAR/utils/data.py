@@ -323,6 +323,7 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
         Returns:
             List of indices for the batch
         """
+        print(f"Getting batch with {class_idx=}")
         if class_idx is None:
             # Randomly select a class folder
             class_idx = np.random.randint(0, self.num_classes)
