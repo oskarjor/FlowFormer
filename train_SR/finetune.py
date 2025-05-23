@@ -24,6 +24,7 @@ import time
 import wandb
 from utils_SR import generate_samples, ema, warmup_lr, format_time, infiniteloop
 from torch.amp import GradScaler, autocast
+import os
 
 FLAGS = flags.FLAGS
 
@@ -116,6 +117,34 @@ def finetune_sr(argv):
         optim, lr_lambda=lambda step: warmup_lr(step, json_args["warmup"])
     )
     sched.load_state_dict(model_weights["sched"])
+
+    if FLAGS.use_wandb:
+        import wandb
+
+        api_key = os.environ.get("WANDB_API_KEY")
+        if not api_key:
+            print("Warning: WANDB_API_KEY not found. Wandb logging will be disabled.")
+            FLAGS.use_wandb = False
+        else:
+            try:
+                wandb.login(key=api_key)
+                run_name = (
+                    FLAGS.wandb_name
+                    or f"SR_finetune_{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_{os.environ.get('SLURM_JOB_ID', 'local')}"
+                )
+
+                wandb.init(
+                    project="flowformer",
+                    entity="oskarjor",
+                    name=run_name,
+                    config=flags.FLAGS.flag_values_dict(),
+                    mode="online" if FLAGS.use_wandb else "disabled",
+                )
+                # Log model architecture
+                wandb.watch(net_model)
+            except Exception as e:
+                print(f"Warning: Failed to initialize wandb: {e}")
+                FLAGS.use_wandb = False
 
     if json_args["naive_upscaling"] == "nearest":
         upscaling_mode = InterpolationMode.NEAREST
