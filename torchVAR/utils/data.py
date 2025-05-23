@@ -313,7 +313,8 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         x, y = self.dataset[idx]
-        return x, y
+        t_y = torch.tensor(y, dtype=torch.long)
+        return x, t_y
 
     def get_batch_indices(self, batch_size, class_idx=None):
         """
