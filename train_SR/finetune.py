@@ -199,7 +199,8 @@ def finetune_sr(argv):
         y0 = y0.to(device)
         y1 = y1.to(device)
 
-        assert y0 == y1, "x0 and x1 must have the same class"
+        # all values in y0 and y1 must be the same
+        assert (y0 == y1).all(), "x0 and x1 must have the same class"
 
         y = y0
 
