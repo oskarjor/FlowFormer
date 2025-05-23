@@ -101,10 +101,10 @@ def finetune_sr(argv):
     net_model.load_state_dict(model_weights["net_model"])
     ema_model = copy.deepcopy(net_model)
     ema_model.load_state_dict(model_weights["ema_model"])
-    optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
+    optim = torch.optim.Adam(net_model.parameters(), lr=json_args["lr"])
     optim.load_state_dict(model_weights["optim"])
     sched = torch.optim.lr_scheduler.LambdaLR(
-        optim, lr_lambda=lambda step: warmup_lr(step, FLAGS.warmup)
+        optim, lr_lambda=lambda step: warmup_lr(step, json_args["warmup"])
     )
     sched.load_state_dict(model_weights["sched"])
 
