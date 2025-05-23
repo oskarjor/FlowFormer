@@ -343,19 +343,21 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
             batch_indices = np.random.choice(
                 class_samples, size=batch_size, replace=False
             )
-        return batch_indices.tolist()
+        return batch_indices.tolist(), class_idx
 
 
 class SameClassBatchDataLoader(DataLoader):
     def __init__(self, dataset, batch_size, num_workers=0):
+        self.batch_size = batch_size
         super().__init__(dataset, batch_size, num_workers)
 
     def __iter__(self):
         return super().__iter__()
 
     def __next__(self, class_idx=None):
-        batch_indices = self.dataset.get_batch_indices(
+        batch_indices, actual_class_idx = self.dataset.get_batch_indices(
             self.batch_size, class_idx=class_idx
         )
         batch = [self.dataset[i] for i in batch_indices]
-        return default_collate(batch)
+        actual_class_tensor = torch.tensor(actual_class_idx).repeat(self.batch_size, 1)
+        return default_collate(batch), actual_class_tensor

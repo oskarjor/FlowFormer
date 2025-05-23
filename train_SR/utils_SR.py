@@ -14,6 +14,18 @@ use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 
 
+def warmup_lr(step, warmup):
+    return min(step, warmup) / warmup
+
+
+def format_time(seconds):
+    """Format time in seconds to a human readable string."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 def setup(
     rank: int,
     total_num_gpus: int,
