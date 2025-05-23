@@ -126,12 +126,15 @@ def sample_sr(argv):
         transform=input_transform,
     )
 
-    x0_dataset = SameClassBatchDataset(input_data, NUM_CLASSES)
-
-    x0_dataloader = SameClassBatchDataLoader(
-        x0_dataset,
+    x0_dataloader = torch.utils.data.DataLoader(
+        input_data,
         batch_size=FLAGS.batch_size,
+        shuffle=True,
         num_workers=FLAGS.num_workers,
+        drop_last=False,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2,
     )
 
     class_to_idx = get_imagenet_class_mapping(FLAGS.split)
