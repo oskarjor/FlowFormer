@@ -191,11 +191,8 @@ def finetune_sr(argv):
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
 
-        print("Getting batch...")
-        x0, y0 = next(x0_dataloader)
-        print(y0)
-        x1, y1 = next(x1_dataloader, y0[0])
-        print(y1)
+        x0, y0 = x0_dataloader.get_batch_by_class()
+        x1, y1 = x1_dataloader.get_batch_by_class(class_idx=y0[0])
 
         x0 = x0.to(device)
         x1 = x1.to(device)
