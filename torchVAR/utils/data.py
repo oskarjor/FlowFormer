@@ -367,11 +367,12 @@ class SameClassBatchDataLoader(DataLoader):
             class_labels: A tensor of shape (BATCH_SIZE, 1)
         """
         if type(class_idx) == torch.Tensor:
-            if len(class_idx.shape) == 1:
-                class_idx = class_idx.item()
-            else:
+            if len(class_idx.shape) > 1:
                 class_idx = class_idx.item()[0]
+            else:
+                class_idx = class_idx.item()
 
+        print(f"Getting batch with {class_idx=}")
         batch_indices = self.dataset.get_batch_indices(
             self.batch_size, class_idx=class_idx
         )
