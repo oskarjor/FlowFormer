@@ -225,7 +225,11 @@ def finetune_sr(argv):
 
     # FINETUNE
     start_time = time.time()
-    scaler = GradScaler(device=device.type, enabled=FLAGS.use_amp)
+
+    if FLAGS.use_amp:
+        scaler = GradScaler(device=device.type, enabled=FLAGS.use_amp)
+    else:
+        scaler = None
 
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
@@ -250,11 +254,16 @@ def finetune_sr(argv):
             vt = net_model(t, xt, y)
             loss = torch.mean((vt - ut) ** 2)
 
-        scaler.scale(loss).backward()
-        scaler.unscale_(optim)
-        torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
-        scaler.step(optim)
-        scaler.update()
+        if FLAGS.use_amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optim)
+            torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
+            scaler.step(optim)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
+            optim.step()
         sched.step()
         ema(net_model, ema_model, FLAGS.ema_decay)
 
