@@ -355,8 +355,18 @@ class SameClassBatchDataLoader(DataLoader):
         return super().__iter__()
 
     def __next__(self, class_idx=None):
+        """
+        Get a batch of images and class labels.
+        Args:
+            class_idx: The class index to get a batch for. If None, a random class is selected.
+                      If a tensor, it must be of shape (1,) or (BATCH_SIZE, 1).
+
+        Returns:
+            batch: A tensor of shape (BATCH_SIZE, 3, IMAGE_SIZE, IMAGE_SIZE)
+            class_labels: A tensor of shape (BATCH_SIZE, 1)
+        """
         if type(class_idx) == torch.Tensor:
-            if len(class_idx) == 1:
+            if len(class_idx.shape) == 1:
                 class_idx = class_idx.item()
             else:
                 class_idx = class_idx.item()[0]
