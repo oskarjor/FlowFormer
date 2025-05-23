@@ -263,7 +263,7 @@ def finetune_sr(argv):
                     "step": step,
                 },
                 FLAGS.save_dir
-                + f"{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_weights_step_{step}.pt",
+                + f"{FLAGS.model}_{json_args['pre_image_size']}_to_{json_args['post_image_size']}_weights_step_{step}_finetuned.pt",
             )
 
             # generate samples
