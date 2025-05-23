@@ -34,6 +34,7 @@ flags.DEFINE_string("target_data_path", None, help="target data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_integer("total_steps", 100000, help="total steps")
+flags.DEFINE_string("model", "otcfm", help="model")
 
 
 use_cuda = torch.cuda.is_available()
