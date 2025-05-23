@@ -231,6 +231,8 @@ def finetune_sr(argv):
     else:
         scaler = None
 
+    os.makedirs(FLAGS.save_dir, exist_ok=True)
+
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
 
