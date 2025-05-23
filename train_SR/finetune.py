@@ -23,6 +23,7 @@ import copy
 import time
 import wandb
 from utils_SR import generate_samples, ema, warmup_lr, format_time, infiniteloop
+from torch.amp import GradScaler, autocast
 
 FLAGS = flags.FLAGS
 
@@ -41,6 +42,7 @@ flags.DEFINE_float("ema_decay", 0.9999, help="ema decay")
 flags.DEFINE_float("grad_clip", 1.0, help="gradient clip")
 flags.DEFINE_integer("warmup", 5000, help="warmup")
 flags.DEFINE_boolean("use_wandb", False, help="use wandb")
+flags.DEFINE_boolean("use_amp", False, "Whether to use Automatic Mixed Precision.")
 
 
 use_cuda = torch.cuda.is_available()
@@ -101,7 +103,7 @@ def finetune_sr(argv):
         class_cond=json_args["class_conditional"],
         num_classes=NUM_CLASSES,
         use_new_attention_order=True,
-        use_fp16=False,
+        use_fp16=FLAGS.use_amp,
     ).to(device)
 
     model_weights = torch.load(FLAGS.model_path, map_location=device)
@@ -194,6 +196,8 @@ def finetune_sr(argv):
 
     # FINETUNE
     start_time = time.time()
+    scaler = GradScaler(device=device.type, enabled=FLAGS.use_amp)
+
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
 
@@ -212,13 +216,16 @@ def finetune_sr(argv):
 
         assert y.shape == (FLAGS.batch_size,), "y must be a tensor of (BATCH_SIZE,)"
 
-        t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
-        vt = net_model(t, xt, y)
-        loss = torch.mean((vt - ut) ** 2)
+        with autocast(device_type=device.type, enabled=FLAGS.use_amp):
+            t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
+            vt = net_model(t, xt, y)
+            loss = torch.mean((vt - ut) ** 2)
 
-        loss.backward()
+        scaler.scale(loss).backward()
+        scaler.unscale_(optim)
         torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
-        optim.step()
+        scaler.step(optim)
+        scaler.update()
         sched.step()
         ema(net_model, ema_model, FLAGS.ema_decay)
 
