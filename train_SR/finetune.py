@@ -204,7 +204,7 @@ def finetune_sr(argv):
 
         y = y0
 
-        assert y.shape == (FLAGS.batch_size, 1), "y must be a tensor of (BATCH_SIZE, 1)"
+        assert y.shape == (FLAGS.batch_size,), "y must be a tensor of (BATCH_SIZE,)"
 
         t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
         vt = net_model(t, xt, y)
