@@ -364,7 +364,7 @@ class SameClassBatchDataLoader(DataLoader):
 
         Returns:
             batch: A tensor of shape (BATCH_SIZE, 3, IMAGE_SIZE, IMAGE_SIZE)
-            class_labels: A tensor of shape (BATCH_SIZE, 1)
+            class_labels: A tensor of shape (BATCH_SIZE,)
         """
         if type(class_idx) == torch.Tensor:
             if len(class_idx.shape) > 1:
@@ -377,4 +377,4 @@ class SameClassBatchDataLoader(DataLoader):
         )
         batch = torch.stack([self.dataset[i][0] for i in batch_indices])
         class_labels = torch.stack([self.dataset[i][1] for i in batch_indices])
-        return batch, class_labels.unsqueeze(1)  # Ensure (batch_size, 1)
+        return batch, class_labels
