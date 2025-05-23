@@ -355,7 +355,7 @@ class SameClassBatchDataLoader(DataLoader):
     def __iter__(self):
         return super().__iter__()
 
-    def __next__(self, class_idx=None):
+    def get_batch_by_class(self, class_idx=None):
         """
         Get a batch of images and class labels.
         Args:
@@ -368,14 +368,13 @@ class SameClassBatchDataLoader(DataLoader):
         """
         if type(class_idx) == torch.Tensor:
             if len(class_idx.shape) > 1:
-                class_idx = class_idx.item()[0]
+                # Assuming class_idx might be passed as (N, 1) and we need the first class
+                class_idx = class_idx[0].item()
             else:
                 class_idx = class_idx.item()
-
-        print(f"Getting batch with {class_idx=}")
         batch_indices = self.dataset.get_batch_indices(
             self.batch_size, class_idx=class_idx
         )
         batch = torch.stack([self.dataset[i][0] for i in batch_indices])
         class_labels = torch.stack([self.dataset[i][1] for i in batch_indices])
-        return batch, class_labels
+        return batch, class_labels.unsqueeze(1)  # Ensure (batch_size, 1)
