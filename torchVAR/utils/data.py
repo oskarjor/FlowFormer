@@ -348,6 +348,7 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
 
 class SameClassBatchDataLoader(DataLoader):
     def __init__(self, dataset, batch_size, num_workers=0):
+        self.batch_size = batch_size
         super().__init__(dataset, batch_size, num_workers)
 
     def __iter__(self):
@@ -358,4 +359,5 @@ class SameClassBatchDataLoader(DataLoader):
             self.batch_size, class_idx=class_idx
         )
         batch = [self.dataset[i] for i in batch_indices]
-        return default_collate(batch), actual_class_idx
+        actual_class_tensor = torch.tensor(actual_class_idx).repeat(self.batch_size, 1)
+        return default_collate(batch), actual_class_tensor
