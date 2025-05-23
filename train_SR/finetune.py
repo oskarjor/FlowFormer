@@ -192,7 +192,7 @@ def finetune_sr(argv):
         optim.zero_grad()
 
         x0, y0 = next(x0_datalooper)
-        x1, y1 = next(x1_datalooper)
+        x1, y1 = next(x1_datalooper, y0)
 
         x0 = x0.to(device)
         x1 = x1.to(device)
