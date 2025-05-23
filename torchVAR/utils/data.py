@@ -323,7 +323,6 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
         Returns:
             List of indices for the batch
         """
-        print(f"Getting batch with {class_idx=}")
         if class_idx is None:
             # Randomly select a class folder
             class_idx = np.random.randint(0, self.num_classes)
@@ -344,7 +343,7 @@ class SameClassBatchDataset(torch.utils.data.Dataset):
             batch_indices = np.random.choice(
                 class_samples, size=batch_size, replace=False
             )
-        return batch_indices.tolist(), class_idx
+        return batch_indices.tolist()
 
 
 class SameClassBatchDataLoader(DataLoader):
@@ -356,10 +355,15 @@ class SameClassBatchDataLoader(DataLoader):
         return super().__iter__()
 
     def __next__(self, class_idx=None):
-        print(f"Getting batch with {class_idx=}")
-        batch_indices, actual_class_idx = self.dataset.get_batch_indices(
+        if type(class_idx) == torch.Tensor:
+            if len(class_idx) == 1:
+                class_idx = class_idx.item()
+            else:
+                class_idx = class_idx.item()[0]
+
+        batch_indices = self.dataset.get_batch_indices(
             self.batch_size, class_idx=class_idx
         )
-        batch = [self.dataset[i] for i in batch_indices]
-        actual_class_tensor = torch.tensor(actual_class_idx).repeat(self.batch_size, 1)
-        return default_collate(batch), actual_class_tensor
+        batch = torch.stack([self.dataset[i][0] for i in batch_indices])
+        class_labels = torch.stack([self.dataset[i][1] for i in batch_indices])
+        return batch, class_labels
