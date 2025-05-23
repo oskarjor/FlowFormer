@@ -19,6 +19,10 @@ from torchcfm.conditional_flow_matching import (
     TargetConditionalFlowMatcher,
     VariancePreservingConditionalFlowMatcher,
 )
+import copy
+import time
+import wandb
+from utils_SR import generate_samples, ema, warmup_lr, format_time, infiniteloop
 
 FLAGS = flags.FLAGS
 
@@ -29,6 +33,8 @@ flags.DEFINE_string("input_data_path", None, help="input data path")
 flags.DEFINE_string("target_data_path", None, help="target data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
+flags.DEFINE_integer("total_steps", 100000, help="total steps")
+
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -50,7 +56,7 @@ def finetune_sr(argv):
         raise ValueError("save_dir is required")
     json_args = read_json_flags(json_path)
 
-    # MODELS
+    # LOAD PRETRAINED UNET MODEL
     if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
         num_heads = 4
         num_head_channels = 64
@@ -91,9 +97,16 @@ def finetune_sr(argv):
         use_fp16=False,
     ).to(device)
 
-    # load model
     model_weights = torch.load(FLAGS.model_path, map_location=device)
     net_model.load_state_dict(model_weights["net_model"])
+    ema_model = copy.deepcopy(net_model)
+    ema_model.load_state_dict(model_weights["ema_model"])
+    optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.lr)
+    optim.load_state_dict(model_weights["optim"])
+    sched = torch.optim.lr_scheduler.LambdaLR(
+        optim, lr_lambda=lambda step: warmup_lr(step, FLAGS.warmup)
+    )
+    sched.load_state_dict(model_weights["sched"])
 
     if json_args["naive_upscaling"] == "nearest":
         upscaling_mode = InterpolationMode.NEAREST
@@ -102,7 +115,7 @@ def finetune_sr(argv):
     else:
         raise ValueError(f"Unknown upscaling mode: {json_args['naive_upscaling']}")
 
-    # finetune
+    # LOAD DATASET
     input_transform, target_transform = (
         transforms.Compose(
             [
@@ -154,10 +167,10 @@ def finetune_sr(argv):
         num_workers=FLAGS.num_workers,
     )
 
-    #################################
-    #            OT-CFM
-    #################################
+    x0_datalooper = infiniteloop(x0_dataloader)
+    x1_datalooper = infiniteloop(x1_dataloader)
 
+    # LOAD FLOW MATCHER
     sigma = 0.0
     if FLAGS.model == "otcfm":
         FM = ExactOptimalTransportConditionalFlowMatcher(sigma=sigma)
@@ -172,13 +185,107 @@ def finetune_sr(argv):
             f"Unknown model {FLAGS.model}, must be one of ['otcfm', 'icfm', 'fm', 'si']"
         )
 
-    for _ in range(10):
-        class_idx = np.random.randint(0, NUM_CLASSES)
-        x0, y0 = next(x0_dataloader, class_idx)
-        x1, y1 = next(x1_dataloader, class_idx)
-        print(x0.shape, x1.shape)
-        print(y0, y1)
-        break
+    # FINETUNE
+    start_time = time.time()
+    for step in range(FLAGS.total_steps):
+        optim.zero_grad()
+
+        x0, y0 = next(x0_datalooper)
+        x1, y1 = next(x1_datalooper)
+
+        x0 = x0.to(device)
+        x1 = x1.to(device)
+        y0 = y0.to(device)
+        y1 = y1.to(device)
+
+        assert y0 == y1, "x0 and x1 must have the same class"
+
+        y = y0
+
+        assert y.shape == (FLAGS.batch_size, 1), "y must be a tensor of (BATCH_SIZE, 1)"
+
+        t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
+        vt = net_model(t, xt, y)
+        loss = torch.mean((vt - ut) ** 2)
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
+        optim.step()
+        sched.step()
+        ema(net_model, ema_model, FLAGS.ema_decay)
+
+        # Print training progress at intervals
+        if step % FLAGS.print_step == 0:
+            current_lr = optim.param_groups[0]["lr"]
+            elapsed_time = time.time() - start_time
+            steps_per_second = step / elapsed_time if elapsed_time > 0 else 0
+            remaining_steps = FLAGS.total_steps - step
+            estimated_remaining_time = (
+                remaining_steps / steps_per_second if steps_per_second > 0 else 0
+            )
+
+            print(
+                f"Step {step}/{FLAGS.total_steps} | "
+                f"Loss: {loss.item():.4f} | "
+                f"LR: {current_lr:.2e} | "
+                f"Time: {format_time(elapsed_time)} | "
+                f"ETA: {format_time(estimated_remaining_time)}"
+            )
+
+            if FLAGS.use_wandb:
+                wandb.log(
+                    {
+                        "train/loss": loss.item(),
+                        "train/learning_rate": current_lr,
+                        "train/step": step,
+                        "train/elapsed_time": elapsed_time,
+                        "train/eta": estimated_remaining_time,
+                    }
+                )
+
+        # sample and Saving the weights
+        if FLAGS.save_step > 0 and step % FLAGS.save_step == 0:
+            # Save the model
+            torch.save(
+                {
+                    "net_model": net_model.state_dict(),
+                    "ema_model": ema_model.state_dict(),
+                    "sched": sched.state_dict(),
+                    "optim": optim.state_dict(),
+                    "step": step,
+                },
+                FLAGS.save_dir
+                + f"{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_weights_step_{step}.pt",
+            )
+
+            # generate samples
+            generate_samples(
+                net_model,
+                False,
+                FLAGS.save_dir,
+                step,
+                image_size=json_args["post_image_size"],
+                x0=x0,
+                y=y,
+                class_cond=json_args["class_conditional"],
+                num_samples=FLAGS.batch_size,
+                num_classes=NUM_CLASSES,
+                net_="finetuned_net",
+            )
+
+            generate_samples(
+                ema_model,
+                False,
+                FLAGS.save_dir,
+                step,
+                image_size=json_args["post_image_size"],
+                x0=x0,
+                y=y,
+                class_cond=json_args["class_conditional"],
+                num_samples=FLAGS.batch_size,
+                num_classes=NUM_CLASSES,
+                net_="finetuned_ema",
+            )
 
 
 if __name__ == "__main__":
