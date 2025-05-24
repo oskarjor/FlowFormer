@@ -22,7 +22,7 @@ from torchcfm.conditional_flow_matching import (
 import copy
 import time
 import wandb
-from utils_SR import generate_samples, ema, warmup_lr, format_time, infiniteloop
+from torchcfm.utils_SR import generate_samples, ema, warmup_lr, format_time, infiniteloop
 from torch.amp import GradScaler, autocast
 import os
 

@@ -6,7 +6,7 @@ import numpy as np
 import os.path as osp
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
-from utils_SR import generate_samples
+from torchcfm.utils_SR import generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
 from torchVAR.utils.data import SameClassBatchDataset, SameClassBatchDataLoader
