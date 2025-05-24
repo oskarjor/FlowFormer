@@ -13,7 +13,12 @@ from torchVAR.utils.imagenet_utils import (
     get_imagenet_class_mapping,
     save_batch_to_imagenet_structure,
 )
-from torch.profiler import profile, record_function, ProfilerActivity
+from torch.profiler import (
+    profile,
+    record_function,
+    ProfilerActivity,
+    tensorboard_trace_handler,
+)
 
 setattr(
     torch.nn.Linear, "reset_parameters", lambda self: None
@@ -189,6 +194,10 @@ def sample_var(argv):
 
     # Profile the inference
     print("\nRunning PyTorch Profiler...")
+
+    # Create a directory for profiling results
+    os.makedirs("profiler_results", exist_ok=True)
+
     with torch.inference_mode():
         with torch.autocast(
             "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
@@ -199,17 +208,23 @@ def sample_var(argv):
                 profile_memory=True,
                 with_stack=True,
                 with_flops=True,
+                with_modules=True,
+                schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=1),
+                on_trace_ready=tensorboard_trace_handler("profiler_results"),
+                with_trace=True,
             ) as prof:
-                with record_function("model_inference"):
-                    recon_B3HW = var.autoregressive_infer_cfg(
-                        B=B,
-                        label_B=label_B,
-                        cfg=cfg,
-                        top_k=900,
-                        top_p=0.95,
-                        g_seed=None,
-                        more_smooth=more_smooth,
-                    )
+                for _ in range(5):  # Run multiple iterations for better profiling
+                    with record_function("model_inference"):
+                        recon_B3HW = var.autoregressive_infer_cfg(
+                            B=B,
+                            label_B=label_B,
+                            cfg=cfg,
+                            top_k=900,
+                            top_p=0.95,
+                            g_seed=None,
+                            more_smooth=more_smooth,
+                        )
+                    prof.step()
 
     # Print profiling results
     print("\nPyTorch Profiler Results:")
@@ -222,6 +237,20 @@ def sample_var(argv):
     # Print memory usage
     print("\nMemory Usage:")
     print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=20))
+
+    # Print detailed FLOPs breakdown
+    print("\nDetailed FLOPs Breakdown:")
+    flops_by_op = {}
+    for evt in prof.key_averages():
+        if evt.flops > 0:
+            flops_by_op[evt.key] = flops_by_op.get(evt.key, 0) + evt.flops
+
+    for op, flops in sorted(flops_by_op.items(), key=lambda x: x[1], reverse=True):
+        print(f"{op}: {flops / 1e9:.2f} GFLOPs")
+
+    # Save profiling results
+    prof.export_chrome_trace("profiler_results/trace.json")
+    print("\nProfiling results saved to profiler_results/ directory")
 
 
 if __name__ == "__main__":
