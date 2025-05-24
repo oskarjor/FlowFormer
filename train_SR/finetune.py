@@ -21,8 +21,12 @@ from torchcfm.conditional_flow_matching import (
 )
 import copy
 import time
-import wandb
-from torchcfm.utils_SR import generate_samples, ema, warmup_lr, format_time, infiniteloop
+from torchcfm.utils_SR import (
+    generate_samples,
+    ema,
+    warmup_lr,
+    format_time,
+)
 from torch.amp import GradScaler, autocast
 import os
 
@@ -104,7 +108,7 @@ def finetune_sr(argv):
         class_cond=json_args["class_conditional"],
         num_classes=NUM_CLASSES,
         use_new_attention_order=True,
-        use_fp16=FLAGS.use_amp,
+        use_fp16=False,
     ).to(device)
 
     model_weights = torch.load(FLAGS.model_path, map_location=device)
