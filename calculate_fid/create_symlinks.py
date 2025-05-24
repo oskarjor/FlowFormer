@@ -8,6 +8,7 @@ def create_symlinks(source_dir):
     Creates symbolic links in a target directory for all files found in source_dir and its subdirectories.
     The target directory is automatically created by appending '_compressed' to the source directory path.
     All symlinks will be created with lowercase extensions to match pytorch-fid requirements.
+    The subfolder structure will be preserved in the symlink names.
 
     Args:
         source_dir (str): The path to the source directory containing image files (can have subfolders).
@@ -43,9 +44,15 @@ def create_symlinks(source_dir):
     for current_path, _, files in os.walk(source_dir):
         for filename in files:
             source_file_path = pathlib.Path(current_path) / filename
+            # Get the relative path from source directory
+            rel_path = source_file_path.relative_to(source_path)
+            # Create a new filename that includes the subfolder structure
+            new_filename = str(rel_path).replace(os.sep, "_")
             # Convert extension to lowercase for the target symlink
             target_filename = (
-                filename.rsplit(".", 1)[0] + "." + filename.rsplit(".", 1)[1].lower()
+                new_filename.rsplit(".", 1)[0]
+                + "."
+                + new_filename.rsplit(".", 1)[1].lower()
             )
             target_symlink_path = target_path / target_filename
 
