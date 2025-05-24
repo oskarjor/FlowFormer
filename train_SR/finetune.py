@@ -175,13 +175,13 @@ def finetune_sr(argv):
         ),
     )
     input_data = DatasetFolder(
-        root=osp.join(FLAGS.input_data_path, "val"),
+        root=osp.join(FLAGS.input_data_path, "train"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
     )
     target_data = DatasetFolder(
-        root=osp.join(FLAGS.target_data_path, "val"),
+        root=osp.join(FLAGS.target_data_path, "train"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=target_transform,
