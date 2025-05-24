@@ -9,23 +9,15 @@ from torchvision.transforms import InterpolationMode, transforms
 from torchcfm.utils_SR import generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
-import time
-from torchVAR.utils.imagenet_utils import (
-    save_batch_to_imagenet_structure,
-    get_imagenet_class_mapping,
-)
 import fvcore.nn as fnn
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("model_path", None, help="model path")
-flags.DEFINE_string("save_dir", "", help="save directory")
-flags.DEFINE_string("data_path", None, help="data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("time_steps", 100, help="time steps")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
-flags.DEFINE_string("split", "val", help="split")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -55,8 +47,6 @@ def sample_sr(argv):
     json_path = FLAGS.json_path
     if json_path is None:
         raise ValueError("json_path is required")
-    if FLAGS.save_dir is None:
-        raise ValueError("save_dir is required")
     json_args = read_json_flags(json_path)
 
     # MODELS
@@ -107,14 +97,6 @@ def sample_sr(argv):
 
     # Wrap model with counter
     net_model = ModelWithCounter(net_model)
-
-    os.makedirs(FLAGS.save_dir, exist_ok=True)
-
-    # Save flags to json file
-    flags_dict = flags.FLAGS.flag_values_dict()
-    flags_path = os.path.join(FLAGS.save_dir, "flags.json")
-    with open(flags_path, "w") as f:
-        json.dump(flags_dict, f, indent=4)
 
     # build dataset
     if json_args["naive_upscaling"] == "nearest":
@@ -168,7 +150,7 @@ def sample_sr(argv):
     traj = generate_samples(
         net_model,
         parallel=False,
-        savedir=FLAGS.save_dir,
+        savedir=None,
         step=json_args["total_steps"],
         time_steps=FLAGS.time_steps,
         image_size=json_args["post_image_size"],
