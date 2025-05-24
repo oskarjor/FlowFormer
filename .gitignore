@@ -13,6 +13,7 @@ torchVAR/local_output/*
 *.ipynb
 .wandb_api_key
 sandbox/
+imagenet512.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
