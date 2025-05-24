@@ -9,13 +9,12 @@ from torchvision.transforms import InterpolationMode, transforms
 from torchcfm.utils_SR import generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
-from torchVAR.utils.data import SameClassBatchDataset, SameClassBatchDataLoader
 import time
-from tqdm import tqdm
 from torchVAR.utils.imagenet_utils import (
     save_batch_to_imagenet_structure,
     get_imagenet_class_mapping,
 )
+import fvcore.nn as fnn
 
 FLAGS = flags.FLAGS
 
@@ -35,6 +34,19 @@ device = torch.device("cuda" if use_cuda else "cpu")
 def read_json_flags(json_path):
     with open(json_path, "r") as f:
         return json.load(f)
+
+
+class ModelWithCounter(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self.eval_count = 0
+
+    def forward(self, t, x, y=None):
+        self.eval_count += 1
+        if y is not None:
+            return self.model(t, x, y)
+        return self.model(t, x)
 
 
 def sample_sr(argv):
@@ -93,6 +105,9 @@ def sample_sr(argv):
     net_model.load_state_dict(model_weights["net_model"])
     net_model.eval()
 
+    # Wrap model with counter
+    net_model = ModelWithCounter(net_model)
+
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     # Save flags to json file
@@ -120,7 +135,7 @@ def sample_sr(argv):
         ]
     )
     input_data = DatasetFolder(
-        root=osp.join(FLAGS.data_path, "val"),
+        root=osp.join("var_d16_imagenet", "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
@@ -137,43 +152,40 @@ def sample_sr(argv):
         prefetch_factor=2,
     )
 
-    class_to_idx = get_imagenet_class_mapping(FLAGS.split)
+    x0, y = next(iter(x0_dataloader))
+    x0 = x0.to(device)
+    y = y.to(device) if json_args["class_conditional"] else None
 
-    start_time = time.time()
+    # Count FLOPs for a single forward pass
+    t = torch.tensor([0.0], device=device)
+    if json_args["class_conditional"]:
+        flops_analysis = fnn.FlopCountAnalysis(net_model.model, (t, x0, y))
+    else:
+        flops_analysis = fnn.FlopCountAnalysis(net_model.model, (t, x0))
+    flops_per_step = flops_analysis.total()
+    print(f"FLOPs per model evaluation: {flops_per_step:,}")
 
-    for i, batch in enumerate(x0_dataloader):
-        x0, y = batch
-        x0 = x0.to(device)
-        y = y.to(device) if json_args["class_conditional"] else None
-
-        traj = generate_samples(
-            net_model,
-            parallel=False,
-            savedir=FLAGS.save_dir,
-            step=json_args["total_steps"],
-            time_steps=FLAGS.time_steps,
-            image_size=json_args["post_image_size"],
-            class_cond=json_args["class_conditional"],
-            num_classes=NUM_CLASSES,
-            net_="normal",
-            num_samples=FLAGS.batch_size,
-            x0=x0,
-            y=y,
-            save_png=False,
-        )
-
-        images = traj.clone().mul_(255).cpu().numpy().astype(np.uint8)
-        class_labels = y.clone().cpu().numpy().astype(np.int32)
-        save_batch_to_imagenet_structure(
-            images,
-            class_labels,
-            i * FLAGS.batch_size,
-            class_to_idx,
-            osp.join(FLAGS.save_dir, FLAGS.split),
-        )
-    print(
-        f"Sampled {len(x0_dataloader)} images in {time.time() - start_time:.2f} seconds"
+    traj = generate_samples(
+        net_model,
+        parallel=False,
+        savedir=FLAGS.save_dir,
+        step=json_args["total_steps"],
+        time_steps=FLAGS.time_steps,
+        image_size=json_args["post_image_size"],
+        class_cond=json_args["class_conditional"],
+        num_classes=NUM_CLASSES,
+        net_="normal",
+        num_samples=FLAGS.batch_size,
+        x0=x0,
+        y=y,
+        save_png=False,
     )
+
+    # Print actual number of model evaluations and total FLOPs
+    actual_steps = net_model.eval_count
+    print(f"Requested time steps: {FLAGS.time_steps}")
+    print(f"Actual model evaluations: {actual_steps}")
+    print(f"Total FLOPs: {flops_per_step * actual_steps:,}")
 
 
 if __name__ == "__main__":

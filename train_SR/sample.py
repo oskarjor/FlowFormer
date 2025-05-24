@@ -4,7 +4,7 @@ import torch
 import os
 import numpy as np
 import os.path as osp
-from utils_SR import generate_samples
+from torchcfm.utils_SR import generate_samples
 from torchcfm.models.unet.unet import UNetModelWrapper
 import time
 from torchVAR.utils.imagenet_utils import (

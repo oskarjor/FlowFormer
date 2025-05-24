@@ -10,7 +10,7 @@ import json
 
 import torch
 from absl import app, flags
-from utils_SR import ema, generate_samples, infiniteloop, warmup_lr, format_time
+from torchcfm.utils_SR import ema, generate_samples, infiniteloop, warmup_lr, format_time
 
 from torchVAR.utils.data import build_SR_dataset
 
