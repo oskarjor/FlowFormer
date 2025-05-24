@@ -128,10 +128,7 @@ def finetune_sr(argv):
         else:
             try:
                 wandb.login(key=api_key)
-                run_name = (
-                    FLAGS.wandb_name
-                    or f"SR_finetune_{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_{os.environ.get('SLURM_JOB_ID', 'local')}"
-                )
+                run_name = f"SR_finetune_{FLAGS.model}_{FLAGS.pre_image_size}_to_{FLAGS.post_image_size}_{os.environ.get('SLURM_JOB_ID', 'local')}"
 
                 wandb.init(
                     project="flowformer",
