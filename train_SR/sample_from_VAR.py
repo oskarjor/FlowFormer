@@ -167,7 +167,7 @@ def sample_sr(argv):
         save_batch_to_imagenet_structure(
             images,
             class_labels,
-            i,
+            i * FLAGS.batch_size,
             class_to_idx,
             osp.join(FLAGS.save_dir, FLAGS.split),
         )
