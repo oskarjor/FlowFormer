@@ -210,8 +210,6 @@ def sample_var(argv):
                 with_flops=True,
                 with_modules=True,
                 schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=1),
-                on_trace_ready=tensorboard_trace_handler("profiler_results"),
-                with_trace=True,
             ) as prof:
                 for _ in range(5):  # Run multiple iterations for better profiling
                     with record_function("model_inference"):
