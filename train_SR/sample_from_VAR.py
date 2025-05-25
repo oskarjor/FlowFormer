@@ -170,6 +170,7 @@ def sample_sr(argv):
             i * FLAGS.batch_size,
             class_to_idx,
             osp.join(FLAGS.save_dir, FLAGS.split),
+            file_format="png",
         )
     print(
         f"Sampled {len(x0_dataloader)} images in {time.time() - start_time:.2f} seconds"

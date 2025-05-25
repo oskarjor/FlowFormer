@@ -16,6 +16,7 @@ sandbox/
 imagenet512.npz
 imagenet256.npz
 output/
+saved_fid_metrics/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
