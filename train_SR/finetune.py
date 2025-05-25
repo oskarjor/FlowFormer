@@ -315,33 +315,45 @@ def finetune_sr(argv):
             )
 
             # generate samples
-            generate_samples(
-                net_model,
-                False,
-                FLAGS.save_dir,
-                step,
-                image_size=json_args["post_image_size"],
-                x0=x0,
-                y=y,
-                class_cond=json_args["class_conditional"],
-                num_samples=FLAGS.batch_size,
-                num_classes=NUM_CLASSES,
-                net_="finetuned_net",
-            )
+            try:
+                generate_samples(
+                    net_model,
+                    False,
+                    FLAGS.save_dir,
+                    step,
+                    image_size=json_args["post_image_size"],
+                    x0=x0,
+                    y=y,
+                    class_cond=json_args["class_conditional"],
+                    num_samples=FLAGS.batch_size,
+                    num_classes=NUM_CLASSES,
+                    net_="finetuned_net",
+                )
+            except Exception as e:
+                print(
+                    f"Warning: Failed to generate samples with net_model at step {step}: {str(e)}"
+                )
+                print("Continuing training...")
 
-            generate_samples(
-                ema_model,
-                False,
-                FLAGS.save_dir,
-                step,
-                image_size=json_args["post_image_size"],
-                x0=x0,
-                y=y,
-                class_cond=json_args["class_conditional"],
-                num_samples=FLAGS.batch_size,
-                num_classes=NUM_CLASSES,
-                net_="finetuned_ema",
-            )
+            try:
+                generate_samples(
+                    ema_model,
+                    False,
+                    FLAGS.save_dir,
+                    step,
+                    image_size=json_args["post_image_size"],
+                    x0=x0,
+                    y=y,
+                    class_cond=json_args["class_conditional"],
+                    num_samples=FLAGS.batch_size,
+                    num_classes=NUM_CLASSES,
+                    net_="finetuned_ema",
+                )
+            except Exception as e:
+                print(
+                    f"Warning: Failed to generate samples with ema_model at step {step}: {str(e)}"
+                )
+                print("Continuing training...")
 
 
 if __name__ == "__main__":
