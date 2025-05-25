@@ -20,7 +20,7 @@ def get_imagenet_class_mapping(split: str) -> dict:
 
 
 def save_batch_to_imagenet_structure(
-    images, class_labels, start_idx, class_to_idx, output_dir
+    images, class_labels, start_idx, class_to_idx, output_dir, file_format="JPEG"
 ):
     """
     Save a batch of images in ImageNet-like directory structure.
@@ -49,5 +49,5 @@ def save_batch_to_imagenet_structure(
         # Convert from (C, H, W) to (H, W, C) and save as JPEG
         img = np.transpose(img, (1, 2, 0))
         img_pil = PImage.fromarray(img)
-        img_path = osp.join(class_dir, f"sample_{start_idx + i}.JPEG")
+        img_path = osp.join(class_dir, f"sample_{start_idx + i}.{file_format}")
         img_pil.save(img_path, subsampling=0, quality=95)
