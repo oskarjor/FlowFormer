@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=1              # Number of tasks
 #SBATCH --time=00-00:10:00    # Upper time limit for the job (DD-HH:MM:SS)
 #SBATCH --mem=100G
-#SBATCH --output=%j.out
+#SBATCH --output=%j_illustrations.out
 #SBATCH --mail-user=oskarjor@ntnu.no
 #SBATCH --mail-type=NONE
 
