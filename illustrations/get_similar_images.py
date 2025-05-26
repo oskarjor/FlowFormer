@@ -28,6 +28,7 @@ flags.DEFINE_string("target_data_path", None, help="target data path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_string("model", "otcfm", help="model")
+flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling mode")
 
 
 use_cuda = torch.cuda.is_available()
@@ -41,28 +42,23 @@ def read_json_flags(json_path):
 
 def get_similar_images(argv):
     NUM_CLASSES = 1000
+    POST_IMAGE_SIZE = 512
 
     # READ JSON FLAGS OF PRETRAINED MODEL
-    json_path = FLAGS.json_path
-    if json_path is None:
-        raise ValueError("json_path is required")
-    if FLAGS.save_dir is None:
-        raise ValueError("save_dir is required")
-    json_args = read_json_flags(json_path)
 
-    if json_args["naive_upscaling"] == "nearest":
+    if FLAGS.naive_upscaling == "nearest":
         upscaling_mode = InterpolationMode.NEAREST
-    elif json_args["naive_upscaling"] == "lanczos":
+    elif FLAGS.naive_upscaling == "lanczos":
         upscaling_mode = InterpolationMode.LANCZOS
     else:
-        raise ValueError(f"Unknown upscaling mode: {json_args['naive_upscaling']}")
+        raise ValueError(f"Unknown upscaling mode: {FLAGS.naive_upscaling}")
 
     # LOAD DATASET
     input_transform, target_transform = (
         transforms.Compose(
             [
                 transforms.Resize(
-                    json_args["post_image_size"],
+                    POST_IMAGE_SIZE,
                     interpolation=upscaling_mode,
                 ),
                 transforms.ToTensor(),
@@ -72,10 +68,10 @@ def get_similar_images(argv):
         transforms.Compose(
             [
                 transforms.Resize(
-                    round(json_args["post_image_size"] * 1.125),
+                    round(POST_IMAGE_SIZE * 1.125),
                     interpolation=InterpolationMode.LANCZOS,
                 ),
-                transforms.CenterCrop(json_args["post_image_size"]),
+                transforms.CenterCrop(POST_IMAGE_SIZE),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
             ]
