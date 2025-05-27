@@ -126,7 +126,7 @@ def sample_var(argv):
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
 
     # Get ImageNet class mapping
-    class_to_idx = get_imagenet_class_mapping(FLAGS.split)
+    class_to_idx = get_imagenet_class_mapping("val")
 
     # Save class mapping
     mapping_dir = f"./{FLAGS.var_ckpt.split('/')[-1].split('.')[0]}_imagenet"
