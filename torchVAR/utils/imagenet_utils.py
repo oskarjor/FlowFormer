@@ -20,7 +20,7 @@ def get_imagenet_class_mapping(split: str) -> dict:
 
 
 def save_batch_to_imagenet_structure(
-    images, class_labels, start_idx, class_to_idx, output_dir, file_format="JPEG"
+    images, class_labels, start_idx, class_to_idx, output_dir, file_format="png"
 ):
     """
     Save a batch of images in ImageNet-like directory structure.
