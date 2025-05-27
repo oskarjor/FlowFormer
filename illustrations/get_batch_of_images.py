@@ -85,7 +85,9 @@ def main(argv):
 
     # Generate output filename from the entire path
     path_string = FLAGS.folder_path.replace("/", "_").replace("\\", "_")
-    output_filename = f"{path_string}_grid_{FLAGS.grid_size}x{FLAGS.grid_size}.jpg"
+    output_filename = (
+        f"images/{path_string}_grid_{FLAGS.grid_size}x{FLAGS.grid_size}.jpg"
+    )
 
     # Save the result
     grid_image.save(output_filename)
