@@ -104,7 +104,7 @@ def generate_samples(
                 generated_class_list = y
 
             traj = torchdiffeq.odeint(
-                model_,
+                lambda t, x: model_(t, x, generated_class_list),
                 x0,
                 torch.linspace(0, 1, time_steps, device=device),
                 atol=1e-4,
