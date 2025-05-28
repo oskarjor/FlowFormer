@@ -112,20 +112,6 @@ def sample_sr(argv):
     net_model.load_state_dict(model_weights["net_model"])
     net_model.eval()
 
-    class ModelWithCounter(torch.nn.Module):
-        def __init__(self, model):
-            super().__init__()
-            self.model = model
-            self.eval_count = 0
-
-        def forward(self, t, x, y=None):
-            self.eval_count += 1
-            if y is not None:
-                return self.model(t, x, y)
-            return self.model(t, x)
-
-    model_with_counter = ModelWithCounter(net_model)
-
     # build dataset
     if json_args["naive_upscaling"] == "nearest":
         upscaling_mode = InterpolationMode.NEAREST
@@ -182,7 +168,7 @@ def sample_sr(argv):
 
     print("Generating samples...")
     traj = generate_samples(
-        model_with_counter,
+        net_model,
         parallel=False,
         savedir=None,
         step=json_args["total_steps"],
@@ -196,18 +182,6 @@ def sample_sr(argv):
         y=y,
         save_png=False,
     )
-
-    # Print actual number of model evaluations and total FLOPs
-    actual_steps = model_with_counter.eval_count
-    print(f"Requested time steps: {FLAGS.time_steps}")
-    print(f"Actual model evaluations: {actual_steps}")
-
-    if flops_per_step is not None:
-        print(
-            f"Total TFLOPs: {round(flops_per_step * actual_steps / 1_000_000_000_000, 3)}"
-        )
-    else:
-        print("FLOP calculation failed - only evaluation count available")
 
 
 if __name__ == "__main__":
