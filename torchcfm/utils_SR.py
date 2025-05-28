@@ -103,14 +103,23 @@ def generate_samples(
             else:
                 generated_class_list = y
 
+            # Create a wrapper function to count evaluations
+            eval_count = 0
+
+            def model_with_counter(t, x):
+                nonlocal eval_count
+                eval_count += 1
+                return model_(t, x, generated_class_list)
+
             traj = torchdiffeq.odeint(
-                lambda t, x: model_(t, x, generated_class_list),
+                model_with_counter,
                 x0,
                 torch.linspace(0, 1, time_steps, device=device),
                 atol=1e-4,
                 rtol=1e-4,
                 method="dopri5",
             )
+            print(f"Number of function evaluations: {eval_count}")
         else:
             node_ = NeuralODE(model_, solver="euler", sensitivity="adjoint")
             traj = node_.trajectory(
