@@ -137,7 +137,7 @@ def sample_sr(argv):
         prefetch_factor=2,
     )
 
-    class_to_idx = get_imagenet_class_mapping(FLAGS.split)
+    class_to_idx = get_imagenet_class_mapping("val")
 
     start_time = time.time()
 
