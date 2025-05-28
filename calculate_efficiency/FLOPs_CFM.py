@@ -11,16 +11,10 @@ from torchcfm.models.unet.unet import UNetModelWrapper, QKVAttention, QKVAttenti
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
 
 # Try to import thop, fallback to fvcore if not available
-try:
-    import thop
+import thop
 
-    USE_THOP = True
-    print("Using thop for FLOP calculation")
-except ImportError:
-    import fvcore.nn as fnn
-
-    USE_THOP = False
-    print("thop not found, using fvcore for FLOP calculation")
+USE_THOP = True
+print("Using thop for FLOP calculation")
 
 FLAGS = flags.FLAGS
 
