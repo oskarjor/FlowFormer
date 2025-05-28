@@ -48,7 +48,6 @@ flags.DEFINE_bool("parallel", False, help="multi gpu training")
 flags.DEFINE_integer("pre_image_size", 32, help="image size")
 flags.DEFINE_integer("post_image_size", 64, help="image size")
 flags.DEFINE_string("dataset", "imagenet", help="dataset")
-flags.DEFINE_list("class_indices", None, help="class indices")
 flags.DEFINE_bool("debug", False, help="debug mode")
 flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precision")
 flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling method")
@@ -94,9 +93,6 @@ def train(argv):
     if FLAGS.save_dir is None:
         FLAGS.save_dir = f"./results/SR/{FLAGS.model}/"
 
-    if FLAGS.class_indices is not None:
-        FLAGS.class_indices = [int(i) for i in FLAGS.class_indices]
-
     # DATASETS/DATALOADER
     if FLAGS.dataset == "imagenet":
         if FLAGS.post_image_size not in [32, 64, 128, 256, 512]:
@@ -108,7 +104,6 @@ def train(argv):
             data_path="./imagenet",
             pre_image_size=FLAGS.pre_image_size,
             post_image_size=FLAGS.post_image_size,
-            class_indices=FLAGS.class_indices,
             naive_upscaling=FLAGS.naive_upscaling,
         )
 
