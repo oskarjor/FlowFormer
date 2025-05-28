@@ -117,7 +117,7 @@ def generate_samples(
                 torch.linspace(0, 1, time_steps, device=device),
                 atol=1e-4,
                 rtol=1e-4,
-                method="dopri5",
+                method="rk4",
             )
             print(f"Number of function evaluations: {eval_count}")
         else:
