@@ -10,7 +10,13 @@ import json
 
 import torch
 from absl import app, flags
-from torchcfm.utils_SR import ema, generate_samples, infiniteloop, warmup_lr, format_time
+from torchcfm.utils_SR import (
+    ema,
+    generate_samples,
+    infiniteloop,
+    warmup_lr,
+    format_time,
+)
 
 from torchVAR.utils.data import build_SR_dataset
 
@@ -68,6 +74,7 @@ flags.DEFINE_string("wandb_name", None, help="wandb run name")
 
 # validation
 flags.DEFINE_integer("validation_steps", 100, help="number of validation steps")
+flags.DEFINE_bool("lightweight", False, help="lightweight training")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -158,6 +165,14 @@ def train(argv):
         raise ValueError(
             f"Unknown image size: {FLAGS.pre_image_size}->{FLAGS.post_image_size}"
         )
+    if FLAGS.lightweight:
+        num_heads = 4
+        num_head_channels = 16
+        attention_resolutions = "16"
+        use_scale_shift_norm = True
+        resblock_updown = True
+        num_res_blocks = 1
+        num_channel = 64
 
     net_model = UNetModelWrapper(
         dim=(3, FLAGS.post_image_size, FLAGS.post_image_size),
