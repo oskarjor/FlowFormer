@@ -7,16 +7,27 @@ import os.path as osp
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
 from torchcfm.utils_SR import generate_samples
-from torchcfm.models.unet.unet import UNetModelWrapper
+from torchcfm.models.unet.unet import UNetModelWrapper, QKVAttention, QKVAttentionLegacy
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
-import fvcore.nn as fnn
+
+# Try to import thop, fallback to fvcore if not available
+try:
+    import thop
+
+    USE_THOP = True
+    print("Using thop for FLOP calculation")
+except ImportError:
+    import fvcore.nn as fnn
+
+    USE_THOP = False
+    print("thop not found, using fvcore for FLOP calculation")
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("model_path", None, help="model path")
 flags.DEFINE_integer("batch_size", 32, help="batch size")
-flags.DEFINE_integer("time_steps", 100, help="time steps")
+flags.DEFINE_integer("time_steps", 20, help="time steps")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 
 use_cuda = torch.cuda.is_available()
@@ -28,17 +39,28 @@ def read_json_flags(json_path):
         return json.load(f)
 
 
-class ModelWithCounter(torch.nn.Module):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-        self.eval_count = 0
+def calculate_flops_thop(model, t, x, y=None):
+    """Calculate FLOPs using thop package with custom ops for attention."""
+    custom_ops = {
+        QKVAttention: QKVAttention.count_flops,
+        QKVAttentionLegacy: QKVAttentionLegacy.count_flops,
+    }
 
-    def forward(self, t, x, y=None):
-        self.eval_count += 1
-        if y is not None:
-            return self.model(t, x, y)
-        return self.model(t, x)
+    if y is not None:
+        inputs = (t, x, y)
+    else:
+        inputs = (t, x)
+
+    try:
+        macs, params = thop.profile(
+            model, inputs=inputs, custom_ops=custom_ops, verbose=False
+        )
+        # Convert MACs to FLOPs (1 MAC = 2 FLOPs for multiply-accumulate)
+        flops = macs * 2
+        return flops
+    except Exception as e:
+        print(f"thop FLOP calculation failed: {e}")
+        return None
 
 
 def sample_sr(argv):
@@ -88,6 +110,7 @@ def sample_sr(argv):
         num_classes=NUM_CLASSES,
         use_new_attention_order=True,
         use_fp16=False,
+        use_checkpoint=False,  # Disable checkpointing for FLOP analysis
     ).to(device)
 
     # load model
@@ -95,8 +118,19 @@ def sample_sr(argv):
     net_model.load_state_dict(model_weights["net_model"])
     net_model.eval()
 
-    # Wrap model with counter
-    net_model = ModelWithCounter(net_model)
+    class ModelWithCounter(torch.nn.Module):
+        def __init__(self, model):
+            super().__init__()
+            self.model = model
+            self.eval_count = 0
+
+        def forward(self, t, x, y=None):
+            self.eval_count += 1
+            if y is not None:
+                return self.model(t, x, y)
+            return self.model(t, x)
+
+    model_with_counter = ModelWithCounter(net_model)
 
     # build dataset
     if json_args["naive_upscaling"] == "nearest":
@@ -139,16 +173,22 @@ def sample_sr(argv):
     y = y.to(device) if json_args["class_conditional"] else None
 
     # Count FLOPs for a single forward pass
+    print("Calculating FLOPs...")
     t = torch.tensor([0.0], device=device)
-    if json_args["class_conditional"]:
-        flops_analysis = fnn.FlopCountAnalysis(net_model.model, (t, x0, y))
-    else:
-        flops_analysis = fnn.FlopCountAnalysis(net_model.model, (t, x0))
-    flops_per_step = flops_analysis.total()
-    print(f"FLOPs per model evaluation: {flops_per_step:,}")
 
+    # Use torch.no_grad() to avoid any gradient computation during FLOP analysis
+    with torch.no_grad():
+        flops_per_step = None
+
+        print("Trying thop FLOP calculation...")
+        flops_per_step = calculate_flops_thop(net_model, t, x0, y)
+        print(
+            f"TFLOPs per model evaluation: {round(flops_per_step / 1_000_000_000_000, 3)}"
+        )
+
+    print("Generating samples...")
     traj = generate_samples(
-        net_model,
+        model_with_counter,
         parallel=False,
         savedir=None,
         step=json_args["total_steps"],
@@ -164,10 +204,16 @@ def sample_sr(argv):
     )
 
     # Print actual number of model evaluations and total FLOPs
-    actual_steps = net_model.eval_count
+    actual_steps = model_with_counter.eval_count
     print(f"Requested time steps: {FLAGS.time_steps}")
     print(f"Actual model evaluations: {actual_steps}")
-    print(f"Total FLOPs: {flops_per_step * actual_steps:,}")
+
+    if flops_per_step is not None:
+        print(
+            f"Total TFLOPs: {round(flops_per_step * actual_steps / 1_000_000_000_000, 3)}"
+        )
+    else:
+        print("FLOP calculation failed - only evaluation count available")
 
 
 if __name__ == "__main__":
