@@ -16,6 +16,7 @@ from torchcfm.utils_SR import (
     infiniteloop,
     warmup_lr,
     format_time,
+    create_mask,
 )
 
 from torchVAR.utils.data import build_SR_dataset
@@ -269,11 +270,9 @@ def train(argv):
 
         x0, x1, y = next(datalooper)
 
-        # Create random mask with damage_ratio of pixels set to 0
         if FLAGS.damage_ratio > 0.0:
-            mask = torch.rand_like(x0[:, 0, :, :]) > FLAGS.damage_ratio
-            mask = mask.unsqueeze(1).repeat(1, 3, 1, 1)
-            x0 = x0 * mask.to(x0.dtype)
+            mask = create_mask(x0, FLAGS.damage_ratio)
+            x0 = x0 * mask
 
         x0 = x0.to(device)
         x1 = x1.to(device)

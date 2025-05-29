@@ -6,7 +6,7 @@ import numpy as np
 import os.path as osp
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchvision.transforms import InterpolationMode, transforms
-from torchcfm.utils_SR import generate_samples
+from torchcfm.utils_SR import generate_samples, create_mask
 from torchcfm.models.unet.unet import UNetModelWrapper
 from torchVAR.utils.data import normalize_01_into_pm1, pil_loader
 from torchVAR.utils.data import SameClassBatchDataset, SameClassBatchDataLoader
@@ -156,9 +156,8 @@ def sample_sr(argv):
 
         # Create random mask with damage_ratio of pixels set to 0
         if FLAGS.damage_ratio > 0.0:
-            mask = torch.rand_like(x0[:, 0, :, :]) > FLAGS.damage_ratio
-            mask = mask.unsqueeze(1).repeat(1, 3, 1, 1)
-            x0 = x0 * mask.to(x0.dtype)
+            mask = create_mask(x0, FLAGS.damage_ratio)
+            x0 = x0 * mask
 
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None

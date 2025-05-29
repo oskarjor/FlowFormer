@@ -152,3 +152,12 @@ def infiniteloop(dataloader):
     while True:
         for values in iter(dataloader):
             yield values
+
+
+def create_mask(x0, damage_ratio, delta=0.001):
+    # Create random mask with damage_ratio of pixels set to 0
+    mask = torch.rand_like(x0[:, 0, :, :]) > damage_ratio
+    mask = mask.unsqueeze(1).repeat(1, 3, 1, 1)
+    mask = mask.to(torch.float32)
+    mask = torch.where(mask, torch.ones_like(mask), torch.full_like(mask, delta))
+    return mask.to(x0.dtype)
