@@ -51,6 +51,7 @@ flags.DEFINE_string("dataset", "imagenet", help="dataset")
 flags.DEFINE_bool("debug", False, help="debug mode")
 flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precision")
 flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling method")
+flags.DEFINE_float("damage_ratio", 0.0, help="damage ratio")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -267,6 +268,13 @@ def train(argv):
         optim.zero_grad()
 
         x0, x1, y = next(datalooper)
+
+        # Create random mask with damage_ratio of pixels set to 0
+        if FLAGS.damage_ratio > 0.0:
+            mask = torch.rand_like(x0[:, 0, :, :]) > FLAGS.damage_ratio
+            mask = mask.unsqueeze(1).repeat(1, 3, 1, 1)
+            x0 = x0 * mask.to(x0.dtype)
+
         x0 = x0.to(device)
         x1 = x1.to(device)
         y = y.to(device) if FLAGS.class_conditional else None

@@ -28,6 +28,7 @@ flags.DEFINE_integer("time_steps", 100, help="time steps")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_string("split", "val", help="split")
 flags.DEFINE_boolean("lightweight", False, help="lightweight")
+flags.DEFINE_float("damage_ratio", 0.0, help="damage ratio")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -152,6 +153,13 @@ def sample_sr(argv):
 
     for i, batch in enumerate(x0_dataloader):
         x0, y = batch
+
+        # Create random mask with damage_ratio of pixels set to 0
+        if FLAGS.damage_ratio > 0.0:
+            mask = torch.rand_like(x0[:, 0, :, :]) > FLAGS.damage_ratio
+            mask = mask.unsqueeze(1).repeat(1, 3, 1, 1)
+            x0 = x0 * mask.to(x0.dtype)
+
         x0 = x0.to(device)
         y = y.to(device) if json_args["class_conditional"] else None
 
