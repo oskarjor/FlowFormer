@@ -56,7 +56,7 @@ def sample_var(argv):
         json.dump(flags_dict, f, indent=4)
 
     MODEL_DEPTH = FLAGS.model_depth
-    assert MODEL_DEPTH in {16, 20, 24, 30}
+    assert MODEL_DEPTH in {16, 20, 24, 30, 36}
 
     # download checkpoint
     hf_home = "https://huggingface.co/FoundationVision/var/resolve/main"
@@ -67,7 +67,11 @@ def sample_var(argv):
         os.system(f"wget {hf_home}/{var_ckpt}")
 
     # build vae, var
-    patch_nums = (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+    patch_nums = (
+        (1, 2, 3, 4, 6, 9, 13, 18, 24, 32)
+        if MODEL_DEPTH == 36
+        else (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+    )
     return_sizes = [int(x) for x in FLAGS.return_sizes]
 
     assert all(x in patch_nums for x in return_sizes), (
