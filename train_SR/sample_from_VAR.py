@@ -27,7 +27,7 @@ flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("time_steps", 100, help="time steps")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_string("split", "val", help="split")
-flags.DEFINE_boolean("lightweight", True, help="lightweight")
+flags.DEFINE_boolean("lightweight", False, help="lightweight")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
