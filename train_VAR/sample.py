@@ -39,6 +39,7 @@ flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 flags.DEFINE_integer("batch_size", 64, help="batch size")
 flags.DEFINE_string("split", "val", help="split")
+flags.DEFINE_bool("shared_aln", False, help="shared_aln")
 
 
 def sample_var(argv):
@@ -83,7 +84,7 @@ def sample_var(argv):
             patch_nums=patch_nums,
             num_classes=1000,
             depth=MODEL_DEPTH,
-            shared_aln=False,
+            shared_aln=FLAGS.shared_aln,
             flash_if_available=FLAGS.flash_attn,
             fused_if_available=FLAGS.fused_mlp,
         )
