@@ -37,7 +37,6 @@ flags.DEFINE_integer("num_samples_per_class", 50, help="number of samples per cl
 flags.DEFINE_bool("debug", False, help="debug")
 flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
-flags.DEFINE_list("return_sizes", [16], help="return sizes")
 flags.DEFINE_integer("batch_size", 64, help="batch size")
 flags.DEFINE_string("split", "val", help="split")
 
@@ -71,11 +70,6 @@ def sample_var(argv):
         (1, 2, 3, 4, 6, 9, 13, 18, 24, 32)
         if MODEL_DEPTH == 36
         else (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
-    )
-    return_sizes = [int(x) for x in FLAGS.return_sizes]
-
-    assert all(x in patch_nums for x in return_sizes), (
-        f"return_sizes must be a subset of patch_nums: {patch_nums}"
     )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
