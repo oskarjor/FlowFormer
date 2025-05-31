@@ -70,6 +70,8 @@ def generate_samples(
     compare_samples=False,
     save_png=True,
     method="dopri5",
+    atol=1e-4,
+    rtol=1e-4,
 ):
     """Save 64 generated images (8 x 8) for sanity check along training.
 
@@ -108,8 +110,8 @@ def generate_samples(
                 lambda t, x: model_(t, x, generated_class_list),
                 x0,
                 torch.linspace(0, 1, time_steps, device=device),
-                atol=1e-4,
-                rtol=1e-4,
+                atol=atol,
+                rtol=rtol,
                 method=method,
             )
         else:
