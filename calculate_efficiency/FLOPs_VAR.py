@@ -43,12 +43,12 @@ def sample_var(argv):
     if not osp.exists(var_ckpt):
         os.system(f"wget {hf_home}/{var_ckpt}")
 
-        # build vae, var
-        patch_nums = (
-            (1, 2, 3, 4, 6, 9, 13, 18, 24, 32)
-            if MODEL_DEPTH == 36
-            else (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
-        )
+    # build vae, var
+    patch_nums = (
+        (1, 2, 3, 4, 6, 9, 13, 18, 24, 32)
+        if MODEL_DEPTH == 36
+        else (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+    )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if "vae" not in globals() or "var" not in globals():
