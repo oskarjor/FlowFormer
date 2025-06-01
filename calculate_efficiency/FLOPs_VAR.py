@@ -28,13 +28,12 @@ flags.DEFINE_bool("more_smooth", False, help="more smooth")
 flags.DEFINE_bool("debug", False, help="debug")
 flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
-flags.DEFINE_list("return_sizes", [16], help="return sizes")
 flags.DEFINE_integer("batch_size", 64, help="batch size")
 
 
 def sample_var(argv):
     MODEL_DEPTH = FLAGS.model_depth
-    assert MODEL_DEPTH in {16, 20, 24, 30}
+    assert MODEL_DEPTH in {16, 20, 24, 30, 36}
 
     # download checkpoint
     hf_home = "https://huggingface.co/FoundationVision/var/resolve/main"
@@ -44,13 +43,12 @@ def sample_var(argv):
     if not osp.exists(var_ckpt):
         os.system(f"wget {hf_home}/{var_ckpt}")
 
-    # build vae, var
-    patch_nums = (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
-    return_sizes = [int(x) for x in FLAGS.return_sizes]
-
-    assert all(x in patch_nums for x in return_sizes), (
-        f"return_sizes must be a subset of patch_nums: {patch_nums}"
-    )
+        # build vae, var
+        patch_nums = (
+            (1, 2, 3, 4, 6, 9, 13, 18, 24, 32)
+            if MODEL_DEPTH == 36
+            else (1, 2, 3, 4, 5, 6, 8, 10, 13, 16)
+        )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if "vae" not in globals() or "var" not in globals():
@@ -63,7 +61,7 @@ def sample_var(argv):
             patch_nums=patch_nums,
             num_classes=1000,
             depth=MODEL_DEPTH,
-            shared_aln=False,
+            shared_aln=FLAGS.model_depth == 36,  # only true for model depth 36
             flash_if_available=FLAGS.flash_attn,
             fused_if_available=FLAGS.fused_mlp,
         )
