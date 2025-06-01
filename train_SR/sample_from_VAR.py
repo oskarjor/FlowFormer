@@ -29,6 +29,9 @@ flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_string("split", "val", help="split")
 flags.DEFINE_boolean("lightweight", False, help="lightweight")
 flags.DEFINE_float("damage_ratio", 0.0, help="damage ratio")
+flags.DEFINE_string("ode_method", "dopri5", help="ode method")
+flags.DEFINE_float("atol", 1e-4, help="atol")
+flags.DEFINE_float("rtol", 1e-4, help="rtol")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -176,6 +179,9 @@ def sample_sr(argv):
             x0=x0,
             y=y,
             save_png=False,
+            method=FLAGS.ode_method,
+            atol=FLAGS.atol,
+            rtol=FLAGS.rtol,
         )
 
         images = traj.clone().mul_(255).cpu().numpy().astype(np.uint8)
