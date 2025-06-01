@@ -26,6 +26,7 @@ flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_string("split", "val", help="split")
 flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling mode")
 flags.DEFINE_string("file_format", "png", help="file format")
+flags.DEFINE_integer("final_size", 512, help="final size")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -42,7 +43,7 @@ def sample_sr(argv):
     input_transform = transforms.Compose(
         [
             transforms.Resize(
-                512,
+                FLAGS.final_size,
                 interpolation=upscaling_mode,
             ),
             transforms.ToTensor(),
