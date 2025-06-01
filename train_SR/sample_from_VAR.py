@@ -74,7 +74,7 @@ def sample_sr(argv):
         raise ValueError(
             f"Unknown image size: {json_args['pre_image_size']}->{json_args['post_image_size']}"
         )
-    if FLAGS.lightweight:
+    if json_args["lightweight"]:
         num_heads = 4
         num_head_channels = 16
         attention_resolutions = "16"
