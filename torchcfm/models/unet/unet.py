@@ -194,7 +194,7 @@ class ResBlock(TimestepBlock):
             ),
         )
         self.out_layers = nn.Sequential(
-            normalization(self.out_channels),
+            normalization(groups=groups, channels=self.out_channels),
             nn.SiLU(),
             nn.Dropout(p=dropout),
             zero_module(
@@ -259,6 +259,7 @@ class AttentionBlock(nn.Module):
         num_head_channels=-1,
         use_checkpoint=False,
         use_new_attention_order=False,
+        groups=32,
     ):
         super().__init__()
         self.channels = channels
@@ -270,7 +271,7 @@ class AttentionBlock(nn.Module):
             )
             self.num_heads = channels // num_head_channels
         self.use_checkpoint = use_checkpoint
-        self.norm = normalization(channels)
+        self.norm = normalization(groups=groups, channels=channels)
         self.qkv = conv_nd(1, channels, channels * 3, 1)
         if use_new_attention_order:
             # split qkv before split heads
@@ -491,6 +492,7 @@ class UNetModel(nn.Module):
                             num_heads=num_heads,
                             num_head_channels=num_head_channels,
                             use_new_attention_order=use_new_attention_order,
+                            groups=groups,
                         )
                     )
                 self.input_blocks.append(TimestepEmbedSequential(*layers))
@@ -538,6 +540,7 @@ class UNetModel(nn.Module):
                 num_heads=num_heads,
                 num_head_channels=num_head_channels,
                 use_new_attention_order=use_new_attention_order,
+                groups=groups,
             ),
             ResBlock(
                 ch,
@@ -576,6 +579,7 @@ class UNetModel(nn.Module):
                             num_heads=num_heads_upsample,
                             num_head_channels=num_head_channels,
                             use_new_attention_order=use_new_attention_order,
+                            groups=groups,
                         )
                     )
                 if level and i == num_res_blocks:
@@ -600,7 +604,7 @@ class UNetModel(nn.Module):
                 self._feature_size += ch
 
         self.out = nn.Sequential(
-            normalization(ch),
+            normalization(groups=groups, channels=ch),
             nn.SiLU(),
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
@@ -754,6 +758,7 @@ class EncoderUNetModel(nn.Module):
                             num_heads=num_heads,
                             num_head_channels=num_head_channels,
                             use_new_attention_order=use_new_attention_order,
+                            groups=groups,
                         )
                     )
                 self.input_blocks.append(TimestepEmbedSequential(*layers))
@@ -801,6 +806,7 @@ class EncoderUNetModel(nn.Module):
                 num_heads=num_heads,
                 num_head_channels=num_head_channels,
                 use_new_attention_order=use_new_attention_order,
+                groups=groups,
             ),
             ResBlock(
                 ch,
@@ -816,7 +822,7 @@ class EncoderUNetModel(nn.Module):
         self.pool = pool
         if pool == "adaptive":
             self.out = nn.Sequential(
-                normalization(ch),
+                normalization(groups=groups, channels=ch),
                 nn.SiLU(),
                 nn.AdaptiveAvgPool2d((1, 1)),
                 zero_module(conv_nd(dims, ch, out_channels, 1)),
@@ -825,7 +831,7 @@ class EncoderUNetModel(nn.Module):
         elif pool == "attention":
             assert num_head_channels != -1
             self.out = nn.Sequential(
-                normalization(ch),
+                normalization(groups=groups, channels=ch),
                 nn.SiLU(),
                 AttentionPool2d(
                     (image_size // ds), ch, num_head_channels, out_channels
@@ -840,7 +846,7 @@ class EncoderUNetModel(nn.Module):
         elif pool == "spatial_v2":
             self.out = nn.Sequential(
                 nn.Linear(self._feature_size, 2048),
-                normalization(2048),
+                normalization(32, 2048),
                 nn.SiLU(),
                 nn.Linear(2048, self.out_channels),
             )
