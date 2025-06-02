@@ -110,17 +110,21 @@ def sample_sr(argv):
         downscaling_factor = 1
     else:
         data_path = FLAGS.data_path
-        downscaling_factor = 1
+        downscaling_factor = 0
 
-    if downscaling_factor > 1:
+    if downscaling_factor > 0:
         input_transform = transforms.Compose(
             [
                 transforms.Resize(
-                    json_args["post_image_size"] * downscaling_factor,
+                    1.125 * json_args["post_image_size"] * downscaling_factor,
                     interpolation=upscaling_mode,
-                )
-                if downscaling_factor > 1
-                else None,
+                ),
+                transforms.CenterCrop(
+                    (
+                        json_args["post_image_size"] * downscaling_factor,
+                        json_args["post_image_size"] * downscaling_factor,
+                    )
+                ),
                 transforms.Resize(
                     json_args["post_image_size"],
                     interpolation=upscaling_mode,
