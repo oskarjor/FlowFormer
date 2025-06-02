@@ -328,25 +328,30 @@ def train(argv):
 
                     if val_step == 0:
                         # generate samples
-                        generated_x1 = generate_samples(
-                            net_model,
-                            FLAGS.parallel,
-                            FLAGS.save_dir,
-                            step,
-                            image_size=FLAGS.post_image_size,
-                            x0=val_x0,
-                            y=val_y,
-                            class_cond=FLAGS.class_conditional,
-                            num_samples=FLAGS.batch_size,
-                            num_classes=num_classes,
-                            method=FLAGS.method,
-                            atol=FLAGS.atol,
-                            rtol=FLAGS.rtol,
-                        )
-                        net_model.eval()
-                        # calculate the reconstruction loss
-                        recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
-                        print(f"Reconstruction Loss: {recon_loss.item():.4f}")
+                        try:
+                            generated_x1 = generate_samples(
+                                net_model,
+                                FLAGS.parallel,
+                                FLAGS.save_dir,
+                                step,
+                                image_size=FLAGS.post_image_size,
+                                x0=val_x0,
+                                y=val_y,
+                                class_cond=FLAGS.class_conditional,
+                                num_samples=FLAGS.batch_size,
+                                num_classes=num_classes,
+                                method=FLAGS.method,
+                                atol=FLAGS.atol,
+                                rtol=FLAGS.rtol,
+                            )
+                            net_model.eval()
+
+                            # calculate the reconstruction loss
+                            recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
+                            print(f"Reconstruction Loss: {recon_loss.item():.4f}")
+                        except Exception as e:
+                            print(f"Error generating samples at step {step}: {e}")
+                            generated_x1 = None
 
                     val_loss += val_loss.item()
 
