@@ -158,6 +158,7 @@ class ResBlock(TimestepBlock):
         use_checkpoint=False,
         up=False,
         down=False,
+        type="normal",
     ):
         super().__init__()
         self.channels = channels
@@ -168,8 +169,13 @@ class ResBlock(TimestepBlock):
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
 
+        if type == "super_lightweight":
+            is_super_lightweight = True
+        else:
+            is_super_lightweight = False
+
         self.in_layers = nn.Sequential(
-            normalization(channels),
+            normalization(channels, super_lightweight=is_super_lightweight),
             nn.SiLU(),
             conv_nd(dims, channels, self.out_channels, 3, padding=1),
         )
