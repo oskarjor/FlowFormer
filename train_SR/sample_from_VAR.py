@@ -96,18 +96,53 @@ def sample_sr(argv):
     else:
         raise ValueError(f"Unknown upscaling mode: {json_args['naive_upscaling']}")
 
-    input_transform = transforms.Compose(
-        [
-            transforms.Resize(
-                json_args["post_image_size"],
-                interpolation=upscaling_mode,
-            ),
-            transforms.ToTensor(),
-            normalize_01_into_pm1,
-        ]
-    )
+    if FLAGS.data_path == "imagenet_64":
+        data_path = "imagenet_64"
+        downscaling_factor = 8
+    elif FLAGS.data_path == "imagenet_128":
+        data_path = "imagenet_128"
+        downscaling_factor = 4
+    elif FLAGS.data_path == "imagenet_256":
+        data_path = "imagenet_256"
+        downscaling_factor = 2
+    elif FLAGS.data_path == "imagenet_512":
+        data_path = "imagenet"
+        downscaling_factor = 1
+    else:
+        data_path = FLAGS.data_path
+        downscaling_factor = 1
+
+    if downscaling_factor > 1:
+        input_transform = transforms.Compose(
+            [
+                transforms.Resize(
+                    json_args["post_image_size"] * downscaling_factor,
+                    interpolation=upscaling_mode,
+                )
+                if downscaling_factor > 1
+                else None,
+                transforms.Resize(
+                    json_args["post_image_size"],
+                    interpolation=upscaling_mode,
+                ),
+                transforms.ToTensor(),
+                normalize_01_into_pm1,
+            ]
+        )
+    else:
+        input_transform = transforms.Compose(
+            [
+                transforms.Resize(
+                    json_args["post_image_size"],
+                    interpolation=upscaling_mode,
+                ),
+                transforms.ToTensor(),
+                normalize_01_into_pm1,
+            ]
+        )
+
     input_data = DatasetFolder(
-        root=osp.join(FLAGS.data_path, "val"),
+        root=osp.join(data_path, "val"),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
