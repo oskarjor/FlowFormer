@@ -898,6 +898,7 @@ class UNetModelWrapper(UNetModel):
         resblock_updown=False,
         use_fp16=False,
         use_new_attention_order=False,
+        type="normal",
     ):
         """Dim (tuple): (C, H, W)"""
         image_size = dim[-1]
@@ -941,6 +942,7 @@ class UNetModelWrapper(UNetModel):
             use_scale_shift_norm=use_scale_shift_norm,
             resblock_updown=resblock_updown,
             use_new_attention_order=use_new_attention_order,
+            type=type,
         )
 
         # Convert to fp16 if requested
