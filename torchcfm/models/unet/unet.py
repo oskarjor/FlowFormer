@@ -433,6 +433,7 @@ class UNetModel(nn.Module):
         use_scale_shift_norm=False,
         resblock_updown=False,
         use_new_attention_order=False,
+        type="normal",
     ):
         super().__init__()
 
