@@ -17,6 +17,7 @@ from torchcfm.utils_SR import (
     warmup_lr,
     format_time,
     create_mask,
+    get_unet_params,
 )
 
 from torchVAR.utils.data import build_SR_dataset
@@ -53,6 +54,7 @@ flags.DEFINE_bool("debug", False, help="debug mode")
 flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precision")
 flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling method")
 flags.DEFINE_float("damage_ratio", 0.0, help="damage ratio")
+flags.DEFINE_string("unet_conf", "normal", help="unet config")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -141,46 +143,18 @@ def train(argv):
     val_datalooper = infiniteloop(val_dataloader)
 
     # MODELS
-    if FLAGS.pre_image_size == 32 and FLAGS.post_image_size == 64:
-        num_heads = 4
-        num_head_channels = 64
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
-        num_res_blocks = 2
-        num_channel = 128
-
-    elif FLAGS.pre_image_size == 256 and FLAGS.post_image_size == 512:
-        num_heads = 8
-        num_head_channels = 64
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
-        num_res_blocks = 2
-        num_channel = 128
-    else:
-        raise ValueError(
-            f"Unknown image size: {FLAGS.pre_image_size}->{FLAGS.post_image_size}"
-        )
-    if FLAGS.lightweight:
-        num_heads = 4
-        num_head_channels = 16
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = True
-        num_res_blocks = 1
-        num_channel = 64
+    unet_params = get_unet_params(FLAGS.unet_conf)
 
     net_model = UNetModelWrapper(
         dim=(3, FLAGS.post_image_size, FLAGS.post_image_size),
-        num_res_blocks=num_res_blocks,
-        num_channels=num_channel,
+        num_res_blocks=unet_params["num_res_blocks"],
+        num_channels=unet_params["num_channel"],
         channel_mult=None,
-        num_heads=num_heads,
-        num_head_channels=num_head_channels,
-        attention_resolutions=attention_resolutions,
-        use_scale_shift_norm=use_scale_shift_norm,
-        resblock_updown=resblock_updown,
+        num_heads=unet_params["num_heads"],
+        num_head_channels=unet_params["num_head_channels"],
+        attention_resolutions=unet_params["attention_resolutions"],
+        use_scale_shift_norm=unet_params["use_scale_shift_norm"],
+        resblock_updown=unet_params["resblock_updown"],
         dropout=0.1,
         class_cond=FLAGS.class_conditional,
         num_classes=num_classes,

@@ -54,6 +54,41 @@ def setup(
     )
 
 
+def get_unet_params(unet_conf: str):
+    if unet_conf == "normal":
+        {
+            "num_heads": 8,
+            "num_head_channels": 64,
+            "attention_resolutions": "16",
+            "use_scale_shift_norm": True,
+            "resblock_updown": False,
+            "num_res_blocks": 2,
+            "num_channel": 128,
+        }
+    elif unet_conf == "lightweight":
+        return {
+            "num_heads": 4,
+            "num_head_channels": 16,
+            "attention_resolutions": "16",
+            "use_scale_shift_norm": True,
+            "resblock_updown": True,
+            "num_res_blocks": 1,
+            "num_channel": 64,
+        }
+    elif unet_conf == "super_lightweight":
+        return {
+            "num_heads": 2,
+            "num_head_channels": 16,
+            "attention_resolutions": "16",
+            "use_scale_shift_norm": True,
+            "resblock_updown": True,
+            "num_res_blocks": 1,
+            "num_channel": 32,
+        }
+    else:
+        raise ValueError(f"Unknown unet config: {unet_conf}")
+
+
 def generate_samples(
     model,
     parallel,

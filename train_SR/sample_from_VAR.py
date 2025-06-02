@@ -16,6 +16,7 @@ from torchVAR.utils.imagenet_utils import (
     save_batch_to_imagenet_structure,
     get_imagenet_class_mapping,
 )
+from torchcfm.utils_SR import get_unet_params
 
 FLAGS = flags.FLAGS
 
@@ -53,47 +54,19 @@ def sample_sr(argv):
     json_args = read_json_flags(json_path)
 
     # MODELS
-    if json_args["pre_image_size"] == 32 and json_args["post_image_size"] == 64:
-        num_heads = 4
-        num_head_channels = 64
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
-        num_res_blocks = 2
-        num_channel = 128
-
-    elif json_args["pre_image_size"] == 256 and json_args["post_image_size"] == 512:
-        num_heads = 8
-        num_head_channels = 64
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = False
-        num_res_blocks = 2
-        num_channel = 128
-    else:
-        raise ValueError(
-            f"Unknown image size: {json_args['pre_image_size']}->{json_args['post_image_size']}"
-        )
-    if json_args["lightweight"]:
-        num_heads = 4
-        num_head_channels = 16
-        attention_resolutions = "16"
-        use_scale_shift_norm = True
-        resblock_updown = True
-        num_res_blocks = 1
-        num_channel = 64
+    unet_params = get_unet_params(json_args["unet_conf"])
 
     print("Loading model...")
     net_model = UNetModelWrapper(
         dim=(3, json_args["post_image_size"], json_args["post_image_size"]),
-        num_res_blocks=num_res_blocks,
-        num_channels=num_channel,
+        num_res_blocks=unet_params["num_res_blocks"],
+        num_channels=unet_params["num_channel"],
         channel_mult=None,
-        num_heads=num_heads,
-        num_head_channels=num_head_channels,
-        attention_resolutions=attention_resolutions,
-        use_scale_shift_norm=use_scale_shift_norm,
-        resblock_updown=resblock_updown,
+        num_heads=unet_params["num_heads"],
+        num_head_channels=unet_params["num_head_channels"],
+        attention_resolutions=unet_params["attention_resolutions"],
+        use_scale_shift_norm=unet_params["use_scale_shift_norm"],
+        resblock_updown=unet_params["resblock_updown"],
         dropout=0.1,
         class_cond=json_args["class_conditional"],
         num_classes=NUM_CLASSES,
