@@ -85,7 +85,7 @@ def sample_sr(argv):
         use_new_attention_order=True,
         use_fp16=False,
         use_checkpoint=False,  # Disable checkpointing for FLOP analysis
-        type=json_args["unet_conf"],
+        groups=unet_params["groups"],
     ).to(device)
 
     # load model

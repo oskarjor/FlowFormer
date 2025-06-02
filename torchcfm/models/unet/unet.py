@@ -158,7 +158,7 @@ class ResBlock(TimestepBlock):
         use_checkpoint=False,
         up=False,
         down=False,
-        type="normal",
+        groups=32,
     ):
         super().__init__()
         self.channels = channels
@@ -169,13 +169,8 @@ class ResBlock(TimestepBlock):
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
 
-        if type == "super_lightweight":
-            is_super_lightweight = True
-        else:
-            is_super_lightweight = False
-
         self.in_layers = nn.Sequential(
-            normalization(channels, super_lightweight=is_super_lightweight),
+            normalization(groups=groups, channels=channels),
             nn.SiLU(),
             conv_nd(dims, channels, self.out_channels, 3, padding=1),
         )
@@ -433,7 +428,7 @@ class UNetModel(nn.Module):
         use_scale_shift_norm=False,
         resblock_updown=False,
         use_new_attention_order=False,
-        type="normal",
+        groups=32,
     ):
         super().__init__()
 
@@ -484,6 +479,7 @@ class UNetModel(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
+                        groups=groups,
                     )
                 ]
                 ch = int(mult * model_channels)
@@ -513,6 +509,7 @@ class UNetModel(nn.Module):
                             use_checkpoint=use_checkpoint,
                             use_scale_shift_norm=use_scale_shift_norm,
                             down=True,
+                            groups=groups,
                         )
                         if resblock_updown
                         else Downsample(
@@ -533,6 +530,7 @@ class UNetModel(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
+                groups=groups,
             ),
             AttentionBlock(
                 ch,
@@ -548,6 +546,7 @@ class UNetModel(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
+                groups=groups,
             ),
         )
         self._feature_size += ch
@@ -565,6 +564,7 @@ class UNetModel(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
+                        groups=groups,
                     )
                 ]
                 ch = int(model_channels * mult)
@@ -590,6 +590,7 @@ class UNetModel(nn.Module):
                             use_checkpoint=use_checkpoint,
                             use_scale_shift_norm=use_scale_shift_norm,
                             up=True,
+                            groups=groups,
                         )
                         if resblock_updown
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
@@ -695,6 +696,7 @@ class EncoderUNetModel(nn.Module):
         resblock_updown=False,
         use_new_attention_order=False,
         pool="adaptive",
+        groups=32,
     ):
         super().__init__()
 
@@ -740,6 +742,7 @@ class EncoderUNetModel(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
+                        groups=groups,
                     )
                 ]
                 ch = int(mult * model_channels)
@@ -769,6 +772,7 @@ class EncoderUNetModel(nn.Module):
                             use_checkpoint=use_checkpoint,
                             use_scale_shift_norm=use_scale_shift_norm,
                             down=True,
+                            groups=groups,
                         )
                         if resblock_updown
                         else Downsample(
@@ -789,6 +793,7 @@ class EncoderUNetModel(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
+                groups=groups,
             ),
             AttentionBlock(
                 ch,
@@ -804,6 +809,7 @@ class EncoderUNetModel(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
+                groups=groups,
             ),
         )
         self._feature_size += ch
@@ -899,7 +905,7 @@ class UNetModelWrapper(UNetModel):
         resblock_updown=False,
         use_fp16=False,
         use_new_attention_order=False,
-        type="normal",
+        groups=32,
     ):
         """Dim (tuple): (C, H, W)"""
         image_size = dim[-1]
@@ -943,7 +949,7 @@ class UNetModelWrapper(UNetModel):
             use_scale_shift_norm=use_scale_shift_norm,
             resblock_updown=resblock_updown,
             use_new_attention_order=use_new_attention_order,
-            type=type,
+            groups=groups,
         )
 
         # Convert to fp16 if requested
