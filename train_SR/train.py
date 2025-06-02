@@ -160,6 +160,7 @@ def train(argv):
         num_classes=num_classes,
         use_new_attention_order=True,
         use_fp16=FLAGS.use_amp,
+        type=FLAGS.unet_conf,
     ).to(device)
 
     if FLAGS.use_wandb:
@@ -411,6 +412,7 @@ def check_model_size(argv):
         num_classes=num_classes,
         use_new_attention_order=True,
         use_fp16=FLAGS.use_amp,
+        type=FLAGS.unet_conf,
     ).to(device)
 
     model_size = 0
