@@ -116,7 +116,7 @@ def sample_sr(argv):
         input_transform = transforms.Compose(
             [
                 transforms.Resize(
-                    1.125 * json_args["post_image_size"] * downscaling_factor,
+                    round(1.125 * json_args["post_image_size"] * downscaling_factor),
                     interpolation=upscaling_mode,
                 ),
                 transforms.CenterCrop(
