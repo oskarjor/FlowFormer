@@ -97,16 +97,16 @@ def sample_sr(argv):
         raise ValueError(f"Unknown upscaling mode: {json_args['naive_upscaling']}")
 
     if FLAGS.data_path == "imagenet_64":
-        data_path = "imagenet"
+        data_path = "./imagenet"
         downscaling_factor = 8
     elif FLAGS.data_path == "imagenet_128":
-        data_path = "imagenet"
+        data_path = "./imagenet"
         downscaling_factor = 4
     elif FLAGS.data_path == "imagenet_256":
-        data_path = "imagenet"
+        data_path = "./imagenet"
         downscaling_factor = 2
     elif FLAGS.data_path == "imagenet_512":
-        data_path = "imagenet"
+        data_path = "./imagenet"
         downscaling_factor = 1
     else:
         data_path = FLAGS.data_path
