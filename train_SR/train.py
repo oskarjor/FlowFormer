@@ -160,7 +160,7 @@ def train(argv):
         num_classes=num_classes,
         use_new_attention_order=True,
         use_fp16=FLAGS.use_amp,
-        type=FLAGS.unet_conf,
+        groups=unet_params["groups"],
     ).to(device)
 
     if FLAGS.use_wandb:
@@ -396,6 +396,7 @@ def check_model_size(argv):
     num_res_blocks = 2
     num_channel = 128
     num_classes = 1000
+    groups = 32
 
     net_model = UNetModelWrapper(
         dim=(3, FLAGS.post_image_size, FLAGS.post_image_size),
@@ -412,7 +413,7 @@ def check_model_size(argv):
         num_classes=num_classes,
         use_new_attention_order=True,
         use_fp16=FLAGS.use_amp,
-        type=FLAGS.unet_conf,
+        groups=groups,
     ).to(device)
 
     model_size = 0

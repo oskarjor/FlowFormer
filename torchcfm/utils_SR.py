@@ -64,6 +64,7 @@ def get_unet_params(unet_conf: str):
             "resblock_updown": False,
             "num_res_blocks": 2,
             "num_channel": 128,
+            "groups": 32,
         }
     elif unet_conf == "lightweight":
         return {
@@ -74,6 +75,7 @@ def get_unet_params(unet_conf: str):
             "resblock_updown": True,
             "num_res_blocks": 1,
             "num_channel": 64,
+            "groups": 32,
         }
     elif unet_conf == "super_lightweight":
         return {
@@ -84,6 +86,7 @@ def get_unet_params(unet_conf: str):
             "resblock_updown": True,
             "num_res_blocks": 1,
             "num_channel": 32,
+            "groups": 8,
         }
     else:
         raise ValueError(f"Unknown unet config: {unet_conf}")

@@ -63,7 +63,7 @@ def sample_sr(argv):
         num_classes=NUM_CLASSES,
         use_new_attention_order=True,
         use_fp16=False,
-        type=json_args["unet_conf"],
+        groups=unet_params["groups"],
     ).to(device)
 
     # load model
