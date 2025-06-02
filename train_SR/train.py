@@ -55,6 +55,9 @@ flags.DEFINE_bool("use_amp", False, help="whether to use automatic mixed precisi
 flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling method")
 flags.DEFINE_float("damage_ratio", 0.0, help="damage ratio")
 flags.DEFINE_string("unet_conf", "normal", help="unet config")
+flags.DEFINE_string("method", "dopri5", help="method")
+flags.DEFINE_float("atol", 1e-4, help="atol")
+flags.DEFINE_float("rtol", 1e-4, help="rtol")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -336,6 +339,9 @@ def train(argv):
                             class_cond=FLAGS.class_conditional,
                             num_samples=FLAGS.batch_size,
                             num_classes=num_classes,
+                            method=FLAGS.method,
+                            atol=FLAGS.atol,
+                            rtol=FLAGS.rtol,
                         )
                         net_model.eval()
                         # calculate the reconstruction loss
