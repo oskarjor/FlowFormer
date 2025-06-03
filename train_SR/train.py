@@ -260,6 +260,11 @@ def train(argv):
         vt = net_model(t, xt, y)
         loss = torch.mean((vt - ut) ** 2)
 
+        if FLAGS.debug:
+            print(
+                f"Potential NANs: \n \t{vt.isnan().sum()=} \n \t{ut.isnan().sum()=} \n \t{loss.isnan()=}"
+            )
+
         loss.backward()
         torch.nn.utils.clip_grad_norm_(net_model.parameters(), FLAGS.grad_clip)
         optim.step()
