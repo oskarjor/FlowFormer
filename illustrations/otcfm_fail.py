@@ -169,7 +169,7 @@ def save_image_pairs(x0, x1, save_dir, file_name):
     for i in range(len(x0)):
         # Create a side-by-side image
         pair = torch.cat([x0[i], x1[i]], dim=2)  # Concatenate horizontally
-        save_path = osp.join(save_dir, file_name)
+        save_path = osp.join(save_dir, file_name + f"_{i}.png")
         vutils.save_image(pair, save_path)
 
 
