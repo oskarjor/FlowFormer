@@ -29,6 +29,7 @@ flags.DEFINE_integer("batch_size", 32, help="batch size")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 flags.DEFINE_string("model", "otcfm", help="model")
 flags.DEFINE_string("naive_upscaling", "nearest", help="naive upscaling mode")
+flags.DEFINE_integer("class_idx", 0, help="class index")
 
 
 use_cuda = torch.cuda.is_available()
@@ -125,8 +126,8 @@ def get_similar_images(argv):
 
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
-    x0, y0 = x0_dataloader.get_batch_by_class()
-    x1, y1 = x1_dataloader.get_batch_by_class(class_idx=y0[0])
+    x0, y0 = x0_dataloader.get_batch_by_class(class_idx=FLAGS.class_idx)
+    x1, y1 = x1_dataloader.get_batch_by_class(class_idx=FLAGS.class_idx)
 
     x0 = x0.to(device)
     x1 = x1.to(device)
