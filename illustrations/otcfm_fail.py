@@ -1,5 +1,5 @@
 from absl import app, flags
-import json
+
 import torch
 import os.path as osp
 from torchVAR.utils.data import (
@@ -21,7 +21,6 @@ import os
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("json_path", None, help="json path")
 flags.DEFINE_string("save_dir", None, help="save directory")
 flags.DEFINE_string("input_data_path", None, help="input data path")
 flags.DEFINE_string("target_data_path", None, help="target data path")
@@ -36,16 +35,9 @@ use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 
 
-def read_json_flags(json_path):
-    with open(json_path, "r") as f:
-        return json.load(f)
-
-
 def get_similar_images(argv):
     NUM_CLASSES = 1000
     POST_IMAGE_SIZE = 512
-
-    # READ JSON FLAGS OF PRETRAINED MODEL
 
     if FLAGS.naive_upscaling == "nearest":
         upscaling_mode = InterpolationMode.NEAREST
