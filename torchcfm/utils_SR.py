@@ -56,7 +56,7 @@ def setup(
 
 def get_unet_params(unet_conf: str):
     if unet_conf == "normal":
-        {
+        return {
             "num_heads": 8,
             "num_head_channels": 64,
             "attention_resolutions": "16",
