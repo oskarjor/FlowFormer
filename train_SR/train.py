@@ -58,6 +58,7 @@ flags.DEFINE_string("unet_conf", "normal", help="unet config")
 flags.DEFINE_string("method", "dopri5", help="method")
 flags.DEFINE_float("atol", 1e-4, help="atol")
 flags.DEFINE_float("rtol", 1e-4, help="rtol")
+flags.DEFINE_integer("time_steps", 100, help="time steps")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -348,6 +349,7 @@ def train(argv):
                                 method=FLAGS.method,
                                 atol=FLAGS.atol,
                                 rtol=FLAGS.rtol,
+                                time_steps=FLAGS.time_steps,
                             )
                             net_model.eval()
 
