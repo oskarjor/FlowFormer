@@ -18,6 +18,7 @@ from torchcfm.conditional_flow_matching import (
     VariancePreservingConditionalFlowMatcher,
 )
 import os
+import torchvision.utils as vutils
 
 FLAGS = flags.FLAGS
 
@@ -135,8 +136,7 @@ def get_similar_images(argv):
         assert y.shape == (FLAGS.batch_size,), "y must be a tensor of (BATCH_SIZE,)"
 
         # save the image pairs before OT
-        os.makedirs(osp.join(FLAGS.save_dir, "before_OT"), exist_ok=True)
-        save_image_pairs(x0, x1, y, osp.join(FLAGS.save_dir, "before_OT"))
+        save_image_pairs(x0, x1, FLAGS.save_dir, "before_OT.png")
 
         ot_x0, ot_x1, M = FM.ot_sampler.sample_plan(x0, x1, return_cost=True)
 
@@ -145,12 +145,12 @@ def get_similar_images(argv):
         save_image_pairs(
             ot_x0,
             ot_x1,
-            y,
-            osp.join(FLAGS.save_dir, f"after_OT_{i}_M_{M.sum().item()}"),
+            FLAGS.save_dir,
+            f"after_OT_{i}_M_{M.sum().item()}.png",
         )
 
 
-def save_image_pairs(x0, x1, y, save_dir):
+def save_image_pairs(x0, x1, save_dir, file_name):
     """
     Save image pairs side by side with clear labeling.
 
@@ -160,12 +160,6 @@ def save_image_pairs(x0, x1, y, save_dir):
         y: Class labels tensor (B,)
         save_dir: Directory to save the images
     """
-    import torchvision.utils as vutils
-    import os
-
-    # Create a directory for this batch
-    batch_dir = os.path.join(save_dir, f"batch_{y[0].item()}")
-    os.makedirs(batch_dir, exist_ok=True)
 
     # Denormalize images from [-1, 1] to [0, 1]
     x0 = (x0 + 1) / 2
@@ -175,12 +169,8 @@ def save_image_pairs(x0, x1, y, save_dir):
     for i in range(len(x0)):
         # Create a side-by-side image
         pair = torch.cat([x0[i], x1[i]], dim=2)  # Concatenate horizontally
-        save_path = os.path.join(batch_dir, f"pair_{i:03d}.png")
+        save_path = osp.join(save_dir, file_name)
         vutils.save_image(pair, save_path)
-
-        # Save individual images with clear naming
-        vutils.save_image(x0[i], os.path.join(batch_dir, f"source_{i:03d}.png"))
-        vutils.save_image(x1[i], os.path.join(batch_dir, f"target_{i:03d}.png"))
 
 
 if __name__ == "__main__":
