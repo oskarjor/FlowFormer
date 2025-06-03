@@ -145,7 +145,7 @@ def sample_sr(argv):
         )
 
     input_data = DatasetFolder(
-        root=osp.join(data_path, "val"),
+        root=osp.join(data_path, FLAGS.split),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
