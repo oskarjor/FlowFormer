@@ -62,7 +62,7 @@ class OTPlanSampler:
         self.normalize_cost = normalize_cost
         self.warn = warn
 
-    def get_map(self, x0, x1):
+    def get_map(self, x0, x1, return_cost=False):
         """Compute the OT plan (wrt squared Euclidean cost) between a source and a target
         minibatch.
 
@@ -96,7 +96,10 @@ class OTPlanSampler:
             if self.warn:
                 warnings.warn("Numerical errors in OT plan, reverting to uniform plan.")
             p = np.ones_like(p) / p.size
-        return p
+        if return_cost:
+            return p, M
+        else:
+            return p
 
     def sample_map(self, pi, batch_size, replace=True):
         r"""Draw source and target samples from pi  $(x,z) \sim \pi$
@@ -126,7 +129,7 @@ class OTPlanSampler:
     #       This is also the case for sample_plan_with_labels
     #       The problem now is it is impossible to "follow" the trajectory
     #       of a sample, as the order is not consistent
-    def sample_plan(self, x0, x1, replace=True):
+    def sample_plan(self, x0, x1, replace=True, return_cost=False):
         r"""Compute the OT plan $\pi$ (wrt squared Euclidean cost) between a source and a target
         minibatch and draw source and target samples from pi $(x,z) \sim \pi$
 
@@ -146,9 +149,12 @@ class OTPlanSampler:
         x1[j] : Tensor, shape (bs, *dim)
             represents the source minibatch drawn from $\pi$
         """
-        pi = self.get_map(x0, x1)
+        pi, M = self.get_map(x0, x1, return_cost=return_cost)
         i, j = self.sample_map(pi, x0.shape[0], replace=replace)
-        return x0[i], x1[j]
+        if return_cost:
+            return x0[i], x1[j], M
+        else:
+            return x0[i], x1[j]
 
     def sample_plan_with_labels(self, x0, x1, y0=None, y1=None, replace=True):
         r"""Compute the OT plan $\pi$ (wrt squared Euclidean cost) between a source and a target
