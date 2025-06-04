@@ -117,12 +117,17 @@ def create_ot_dataset_mappings(argv):
             ]
         ),
     )
+
+    # LOAD DATASET
+    print(f"Loading input data from {FLAGS.input_data_path}")
     input_data = DatasetFolder(
         root=osp.join(FLAGS.input_data_path),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         transform=input_transform,
     )
+
+    print(f"Loading target data from {FLAGS.target_data_path}")
     target_data = DatasetFolder(
         root=osp.join(FLAGS.target_data_path),
         loader=pil_loader,
@@ -130,6 +135,8 @@ def create_ot_dataset_mappings(argv):
         transform=target_transform,
     )
 
+    # CREATE BATCH DATASET
+    print(f"Creating batch dataset for input data")
     x0_dataset = SameClassBatchDataset(input_data, NUM_CLASSES)
     x1_dataset = SameClassBatchDataset(target_data, NUM_CLASSES)
 
