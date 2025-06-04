@@ -133,18 +133,6 @@ def create_ot_dataset_mappings(argv):
     x0_dataset = SameClassBatchDataset(input_data, NUM_CLASSES)
     x1_dataset = SameClassBatchDataset(target_data, NUM_CLASSES)
 
-    x0_dataloader = SameClassBatchDataLoader(
-        x0_dataset,
-        batch_size=FLAGS.batch_size,
-        num_workers=FLAGS.num_workers,
-    )
-
-    x1_dataloader = SameClassBatchDataLoader(
-        x1_dataset,
-        batch_size=FLAGS.batch_size,
-        num_workers=FLAGS.num_workers,
-    )
-
     # LOAD FLOW MATCHER
     sigma = 0.0
     if FLAGS.model == "otcfm":
