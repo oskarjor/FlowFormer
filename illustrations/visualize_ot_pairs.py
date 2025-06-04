@@ -1,0 +1,238 @@
+from absl import app, flags
+import json
+import pickle
+import torch
+import os.path as osp
+from torchVAR.utils.data import pil_loader
+from torchvision import transforms
+from torchvision.transforms.functional import InterpolationMode
+from torchVAR.utils.data import normalize_01_into_pm1
+from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
+import os
+from PIL import Image
+
+FLAGS = flags.FLAGS
+
+flags.DEFINE_string(
+    "mapping_file", None, help="Path to the optimal transport mapping file"
+)
+flags.DEFINE_string("input_data_path", None, help="input data path")
+flags.DEFINE_string("target_data_path", None, help="target data path")
+flags.DEFINE_string("output_dir", None, help="output directory for saved pairs")
+flags.DEFINE_integer("num_pairs", 20, help="number of pairs to save")
+flags.DEFINE_integer("num_classes", 5, help="number of different classes to show")
+flags.DEFINE_string("upscaling_mode", "lanczos", help="upscaling mode")
+
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
+
+
+class OTMappedDataset(torch.utils.data.Dataset):
+    """
+    A dataset that uses pre-computed optimal transport mappings to efficiently
+    load corresponding x0 and x1 pairs without storing duplicate images.
+    """
+
+    def __init__(self, input_dataset, target_dataset, mapping_file):
+        """
+        Args:
+            input_dataset: The x0 dataset (low resolution)
+            target_dataset: The x1 dataset (high resolution)
+            mapping_file: Path to the pickle file containing OT mappings
+        """
+        self.input_dataset = input_dataset
+        self.target_dataset = target_dataset
+
+        # Load the optimal transport mappings
+        with open(mapping_file, "rb") as f:
+            self.ot_mappings = pickle.load(f)
+
+        # Create a flat list of all (x0_idx, x1_idx) pairs from all classes
+        self.pairs = []
+        for class_idx, class_mappings in self.ot_mappings.items():
+            for x0_batch_idx, x1_batch_idx in zip(
+                class_mappings["x0_indices"], class_mappings["x1_indices"]
+            ):
+                # Convert batch indices back to global dataset indices
+                x0_global_idx = class_mappings["x0_global_indices"][x0_batch_idx]
+                x1_global_idx = class_mappings["x1_global_indices"][x1_batch_idx]
+                self.pairs.append((x0_global_idx, x1_global_idx, class_idx))
+
+        print(
+            f"Loaded OT dataset with {len(self.pairs)} paired samples from {len(self.ot_mappings)} classes"
+        )
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def __getitem__(self, idx):
+        x0_idx, x1_idx, class_idx = self.pairs[idx]
+
+        # Load the corresponding images
+        x0, _ = self.input_dataset[x0_idx]
+        x1, _ = self.target_dataset[x1_idx]
+
+        return x0, x1, class_idx
+
+    def get_class_pairs(self, class_idx, num_pairs=None):
+        """Get all pairs for a specific class."""
+        class_pairs = [
+            (x0_idx, x1_idx, c_idx)
+            for x0_idx, x1_idx, c_idx in self.pairs
+            if c_idx == class_idx
+        ]
+        if num_pairs is not None:
+            class_pairs = class_pairs[:num_pairs]
+        return class_pairs
+
+
+def tensor_to_pil(tensor):
+    """Convert a tensor from [-1, 1] range to PIL Image."""
+    # Convert from [-1, 1] to [0, 1]
+    tensor = (tensor + 1) / 2
+    # Clamp to valid range
+    tensor = torch.clamp(tensor, 0, 1)
+    # Convert to PIL
+    return transforms.ToPILImage()(tensor)
+
+
+def save_image_pair(x0, x1, save_path, pair_idx, class_idx):
+    """Save a pair of images side by side."""
+    # Convert tensors to PIL images
+    x0_pil = tensor_to_pil(x0)
+    x1_pil = tensor_to_pil(x1)
+
+    # Create side-by-side image
+    width, height = x0_pil.size
+    combined = Image.new("RGB", (width * 2, height))
+    combined.paste(x0_pil, (0, 0))
+    combined.paste(x1_pil, (width, 0))
+
+    # Save the combined image
+    filename = f"pair_{pair_idx:03d}_class_{class_idx:03d}.png"
+    combined.save(osp.join(save_path, filename))
+
+    return filename
+
+
+def visualize_ot_pairs(argv):
+    """Load OT dataset and save some image pairs for visualization."""
+
+    # Load metadata to get original parameters
+    metadata_file = osp.join(osp.dirname(FLAGS.mapping_file), "ot_metadata.json")
+    with open(metadata_file, "r") as f:
+        metadata = json.load(f)
+
+    print("Loaded dataset metadata:")
+    for key, value in metadata.items():
+        print(f"  {key}: {value}")
+
+    POST_IMAGE_SIZE = metadata["post_image_size"]
+
+    if FLAGS.upscaling_mode == "nearest":
+        upscaling_mode = InterpolationMode.NEAREST
+    elif FLAGS.upscaling_mode == "lanczos":
+        upscaling_mode = InterpolationMode.LANCZOS
+    else:
+        raise ValueError(f"Unknown upscaling mode: {FLAGS.upscaling_mode}")
+
+    # LOAD ORIGINAL DATASETS
+    input_transform, target_transform = (
+        transforms.Compose(
+            [
+                transforms.Resize(
+                    POST_IMAGE_SIZE,
+                    interpolation=upscaling_mode,
+                ),
+                transforms.ToTensor(),
+                normalize_01_into_pm1,
+            ]
+        ),
+        transforms.Compose(
+            [
+                transforms.Resize(
+                    round(POST_IMAGE_SIZE * 1.125),
+                    interpolation=InterpolationMode.LANCZOS,
+                ),
+                transforms.CenterCrop(POST_IMAGE_SIZE),
+                transforms.ToTensor(),
+                normalize_01_into_pm1,
+            ]
+        ),
+    )
+
+    input_data = DatasetFolder(
+        root=FLAGS.input_data_path,
+        loader=pil_loader,
+        extensions=IMG_EXTENSIONS,
+        transform=input_transform,
+    )
+    target_data = DatasetFolder(
+        root=FLAGS.target_data_path,
+        loader=pil_loader,
+        extensions=IMG_EXTENSIONS,
+        transform=target_transform,
+    )
+
+    # CREATE OT MAPPED DATASET
+    ot_dataset = OTMappedDataset(input_data, target_data, FLAGS.mapping_file)
+
+    # Create output directory
+    os.makedirs(FLAGS.output_dir, exist_ok=True)
+
+    print(f"\nSaving image pairs to: {FLAGS.output_dir}")
+    print(f"Saving {FLAGS.num_pairs} pairs from {FLAGS.num_classes} classes...")
+
+    # Get available classes
+    available_classes = list(ot_dataset.ot_mappings.keys())
+    selected_classes = available_classes[: FLAGS.num_classes]
+
+    pairs_per_class = FLAGS.num_pairs // FLAGS.num_classes
+    total_saved = 0
+
+    for class_idx in selected_classes:
+        print(f"\nProcessing class {class_idx}...")
+
+        # Get pairs for this class
+        class_pairs = ot_dataset.get_class_pairs(class_idx, num_pairs=pairs_per_class)
+
+        for i, (x0_idx, x1_idx, c_idx) in enumerate(class_pairs):
+            # Load the pair
+            x0, x1, _ = ot_dataset[ot_dataset.pairs.index((x0_idx, x1_idx, c_idx))]
+
+            # Save the pair
+            filename = save_image_pair(x0, x1, FLAGS.output_dir, total_saved, class_idx)
+            print(f"  Saved: {filename}")
+
+            total_saved += 1
+
+            if total_saved >= FLAGS.num_pairs:
+                break
+
+        if total_saved >= FLAGS.num_pairs:
+            break
+
+    print(f"\nCompleted! Saved {total_saved} image pairs.")
+    print(f"Images are saved as: pair_XXX_class_YYY.png")
+    print(f"  - Left side: x0 (low resolution input)")
+    print(f"  - Right side: x1 (high resolution target)")
+    print(f"  - These pairs are optimally transported matches!")
+
+    # Save a summary
+    summary = {
+        "total_pairs_saved": total_saved,
+        "classes_shown": selected_classes[: FLAGS.num_classes],
+        "pairs_per_class": pairs_per_class,
+        "output_directory": FLAGS.output_dir,
+        "dataset_metadata": metadata,
+    }
+
+    summary_file = osp.join(FLAGS.output_dir, "summary.json")
+    with open(summary_file, "w") as f:
+        json.dump(summary, f, indent=2)
+
+    print(f"Summary saved to: {summary_file}")
+
+
+if __name__ == "__main__":
+    app.run(visualize_ot_pairs)
