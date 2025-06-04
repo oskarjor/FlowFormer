@@ -1,0 +1,197 @@
+"""
+Test whether the learned flow matching vector field is approximately a gradient field.
+
+A vector field v(x,t) is a gradient field if:
+1. It can be written as v(x,t) = ∇φ(x,t) for some scalar potential φ
+2. The curl of the vector field is zero: ∇ × v = 0
+3. For flow matching, this would mean straight-line flows from x0 to x1
+"""
+
+import torch
+import torch.nn.functional as F
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
+import os
+import json
+
+# Import the necessary modules from your training setup
+from torchcfm.conditional_flow_matching import (
+    ExactOptimalTransportConditionalFlowMatcher,
+)
+from torchcfm.models.unet.unet import UNetModelWrapper
+from torchcfm.utils_SR import get_unet_params
+from torchVAR.utils.data import build_SR_dataset
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
+
+class GradientFieldTester:
+    def __init__(self, model_path, config_path=None):
+        """
+        Initialize the gradient field tester.
+
+        Args:
+            model_path: Path to the trained model checkpoint
+            config_path: Path to the training configuration (flags.json)
+        """
+        self.model_path = model_path
+        self.config_path = config_path
+        self.model = None
+        self.config = None
+
+    def load_model(self):
+        """Load the trained model and configuration."""
+        print(f"Loading model from {self.model_path}")
+
+        # Load the checkpoint
+        checkpoint = torch.load(self.model_path, map_location=device)
+
+        # Try to load config if available
+        if self.config_path and os.path.exists(self.config_path):
+            with open(self.config_path, "r") as f:
+                self.config = json.load(f)
+                print("Loaded configuration from flags.json")
+        else:
+            # Use default configuration based on the model name
+            print("Using default configuration (assuming 32->64 super-resolution)")
+            self.config = {
+                "pre_image_size": 256,
+                "post_image_size": 512,
+                "class_conditional": True,
+                "unet_conf": "normal",
+                "use_amp": False,
+            }
+
+        # Get UNet parameters
+        unet_params = get_unet_params(self.config.get("unet_conf", "normal"))
+
+        # Initialize the model
+        self.model = UNetModelWrapper(
+            dim=(3, self.config["post_image_size"], self.config["post_image_size"]),
+            num_res_blocks=unet_params["num_res_blocks"],
+            num_channels=unet_params["num_channel"],
+            channel_mult=None,
+            num_heads=unet_params["num_heads"],
+            num_head_channels=unet_params["num_head_channels"],
+            attention_resolutions=unet_params["attention_resolutions"],
+            use_scale_shift_norm=unet_params["use_scale_shift_norm"],
+            resblock_updown=unet_params["resblock_updown"],
+            dropout=0.1,
+            class_cond=self.config.get("class_conditional", False),
+            num_classes=1000,
+            use_new_attention_order=True,
+            use_fp16=self.config.get("use_amp", False),
+            groups=unet_params["groups"],
+        ).to(device)
+
+        # Load the trained weights
+        if "ema_model" in checkpoint:
+            print("Loading EMA model weights")
+            self.model.load_state_dict(checkpoint["ema_model"])
+        else:
+            print("Loading regular model weights")
+            self.model.load_state_dict(checkpoint["net_model"])
+
+        self.model.eval()
+        print("Model loaded successfully!")
+
+        # Initialize the flow matcher
+        self.flow_matcher = ExactOptimalTransportConditionalFlowMatcher(sigma=0.0)
+
+    def get_test_data(self, num_samples=4):
+        """Get some test data pairs (x0, x1) for analysis."""
+        print("Loading test data...")
+
+        try:
+            # Try to load the dataset
+            train_set, val_set = build_SR_dataset(
+                data_path="./imagenet",
+                pre_image_size=self.config["pre_image_size"],
+                post_image_size=self.config["post_image_size"],
+                naive_upscaling="nearest",
+            )
+
+            # Get a few samples
+            test_loader = torch.utils.data.DataLoader(
+                val_set, batch_size=num_samples, shuffle=True
+            )
+            x0, x1, y = next(iter(test_loader))
+
+            return (
+                x0.to(device),
+                x1.to(device),
+                y.to(device) if self.config.get("class_conditional") else None,
+            )
+
+        except Exception as e:
+            print(f"Could not load dataset: {e}")
+            print("Generating random test data instead...")
+
+            # Generate random test data with the right dimensions
+            x0 = torch.randn(
+                num_samples,
+                3,
+                self.config["pre_image_size"],
+                self.config["pre_image_size"],
+            ).to(device)
+            x1 = torch.randn(
+                num_samples,
+                3,
+                self.config["post_image_size"],
+                self.config["post_image_size"],
+            ).to(device)
+            y = None
+
+            return x0, x1, y
+
+
+def main():
+    """Main function to demonstrate basic functionality."""
+
+    # Path to your trained model
+    model_path = "results/otcfm_32_to_64_weights_step_120000.pt"
+
+    # Check if model exists
+    if not os.path.exists(model_path):
+        print(f"Model not found at {model_path}")
+        print("Please update the model_path variable to point to your trained model.")
+        return
+
+    # Initialize the tester
+    tester = GradientFieldTester(model_path)
+
+    # Load the model
+    tester.load_model()
+
+    # Get some test data
+    x0, x1, y = tester.get_test_data(num_samples=2)
+
+    print(f"Test data shapes:")
+    print(f"  x0 (low-res): {x0.shape}")
+    print(f"  x1 (high-res): {x1.shape}")
+    if y is not None:
+        print(f"  y (labels): {y.shape}")
+
+    # Test basic model forward pass
+    with torch.no_grad():
+        # Sample a time point
+        t = torch.rand(x0.shape[0], device=device)
+
+        # For now, let's just test with a simple interpolation
+        # In the actual flow, xt would be sampled from the flow matcher
+        alpha = t.view(-1, 1, 1, 1)
+        xt = alpha * x1 + (1 - alpha) * F.interpolate(
+            x0, size=x1.shape[-2:], mode="bilinear", align_corners=False
+        )
+
+        # Get the vector field prediction
+        vt = tester.model(t, xt, y)
+
+        print(f"Vector field prediction shape: {vt.shape}")
+        print("✓ Basic model forward pass successful!")
+
+
+if __name__ == "__main__":
+    main()
