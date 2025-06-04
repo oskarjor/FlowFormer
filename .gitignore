@@ -3,6 +3,7 @@ wandb/
 imagenet/
 var_d16_imagenet/
 var_d30_imagenet/
+var_d36_imagenet/
 *.out
 */.DS_Store
 .DS_Store
@@ -17,6 +18,7 @@ imagenet512.npz
 imagenet256.npz
 output/
 saved_fid_metrics/
+images/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
