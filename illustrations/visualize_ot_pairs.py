@@ -10,6 +10,7 @@ from torchVAR.utils.data import normalize_01_into_pm1
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 import os
 from PIL import Image
+import random
 
 FLAGS = flags.FLAGS
 
@@ -186,7 +187,7 @@ def visualize_ot_pairs(argv):
 
     # Get available classes
     available_classes = list(ot_dataset.ot_mappings.keys())
-    selected_classes = available_classes[: FLAGS.num_classes]
+    selected_classes = random.sample(available_classes, FLAGS.num_classes)
 
     pairs_per_class = FLAGS.num_pairs // FLAGS.num_classes
     total_saved = 0
