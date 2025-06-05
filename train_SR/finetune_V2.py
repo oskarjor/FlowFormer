@@ -48,7 +48,7 @@ flags.DEFINE_float("grad_clip", 1.0, help="gradient clip")
 flags.DEFINE_integer("warmup", 5000, help="warmup")
 flags.DEFINE_boolean("use_wandb", False, help="use wandb")
 flags.DEFINE_boolean("use_amp", False, "Whether to use Automatic Mixed Precision.")
-
+flags.DEFINE_string("ot_mapping_path", None, "path to ot mapping")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
