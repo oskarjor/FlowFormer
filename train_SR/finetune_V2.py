@@ -49,6 +49,7 @@ flags.DEFINE_integer("warmup", 5000, help="warmup")
 flags.DEFINE_boolean("use_wandb", False, help="use wandb")
 flags.DEFINE_boolean("use_amp", False, "Whether to use Automatic Mixed Precision.")
 flags.DEFINE_string("ot_mapping_path", None, "path to ot mapping")
+flags.DEFINE_float("learning_rate", 1e-4, "learning rate")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -96,10 +97,10 @@ def finetune_sr(argv):
     net_model.load_state_dict(model_weights["net_model"])
     ema_model = copy.deepcopy(net_model)
     ema_model.load_state_dict(model_weights["ema_model"])
-    optim = torch.optim.Adam(net_model.parameters(), lr=json_args["lr"])
+    optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.learning_rate)
     optim.load_state_dict(model_weights["optim"])
     sched = torch.optim.lr_scheduler.LambdaLR(
-        optim, lr_lambda=lambda step: warmup_lr(step, json_args["warmup"])
+        optim, lr_lambda=lambda step: warmup_lr(step, FLAGS.warmup)
     )
     sched.load_state_dict(model_weights["sched"])
 
