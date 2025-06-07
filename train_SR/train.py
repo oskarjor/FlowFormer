@@ -340,8 +340,10 @@ def train(argv):
                     val_x0, val_x1 = val_x0.to(device), val_x1.to(device)
                     val_y = val_y.to(device) if FLAGS.class_conditional else None
 
-                    val_t, val_xt, val_ut = FM.sample_location_and_conditional_flow(
-                        val_x0, val_x1
+                    val_t, val_xt, val_ut, _, val_y = (
+                        FM.guided_sample_location_and_conditional_flow(
+                            val_x0, val_x1, y0=val_y, y1=val_y
+                        )
                     )
                     val_vt = net_model(val_t, val_xt, val_y)
                     val_loss = torch.mean((val_vt - val_ut) ** 2)
