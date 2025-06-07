@@ -60,6 +60,16 @@ flags.DEFINE_float("atol", 1e-4, help="atol")
 flags.DEFINE_float("rtol", 1e-4, help="rtol")
 flags.DEFINE_integer("time_steps", 100, help="time steps")
 
+# Robust training flags
+flags.DEFINE_bool(
+    "robust_augmentations",
+    False,
+    help="enable VAR-robust augmentations during training",
+)
+flags.DEFINE_float(
+    "augment_prob", 0.7, help="probability of applying robust augmentations"
+)
+
 # Evaluation
 flags.DEFINE_integer(
     "save_step",
@@ -113,6 +123,8 @@ def train(argv):
             pre_image_size=FLAGS.pre_image_size,
             post_image_size=FLAGS.post_image_size,
             naive_upscaling=FLAGS.naive_upscaling,
+            robust_augmentations=FLAGS.robust_augmentations,
+            augment_prob=FLAGS.augment_prob,
         )
 
         if FLAGS.debug:

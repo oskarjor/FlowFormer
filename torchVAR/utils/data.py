@@ -263,6 +263,8 @@ def build_SR_dataset(
     hflip=False,
     mid_reso=1.125,
     naive_upscaling="nearest",
+    robust_augmentations=False,
+    augment_prob=0.7,
 ):
     assert naive_upscaling in ["nearest", "bicubic", "lanczos"], (
         f"Invalid naive_upscaling method {naive_upscaling}"
@@ -303,18 +305,36 @@ def build_SR_dataset(
 
     # Transforms to create the degraded version
     # First resize down to low-res, then back up to high-res
-    degrade_transform = transforms.Compose(
-        [
-            transforms.Resize(
-                pre_image_size, interpolation=InterpolationMode.LANCZOS
-            ),  # Downscale
-            transforms.Resize(
-                post_image_size, interpolation=interpolation
-            ),  # Upscale back
-            transforms.ToTensor(),
-            normalize_01_into_pm1,
-        ]
-    )
+    base_degrade_transforms = [
+        transforms.Resize(
+            pre_image_size, interpolation=InterpolationMode.LANCZOS
+        ),  # Downscale
+        transforms.Resize(post_image_size, interpolation=interpolation),  # Upscale back
+        transforms.ToTensor(),
+    ]
+
+    # Add robust augmentations if requested
+    if robust_augmentations:
+        try:
+            from robust_training_augmentations import (
+                VARRobustAugmentation,
+                StandardRobustAugmentation,
+            )
+
+            print(f"[Dataset] Adding robust augmentations with prob={augment_prob}")
+            base_degrade_transforms.extend(
+                [
+                    VARRobustAugmentation(prob=augment_prob),
+                    StandardRobustAugmentation(prob=augment_prob * 0.8),
+                ]
+            )
+        except ImportError:
+            print(
+                "Warning: robust_training_augmentations not found, skipping robust augmentations"
+            )
+
+    base_degrade_transforms.append(normalize_01_into_pm1)
+    degrade_transform = transforms.Compose(base_degrade_transforms)
 
     # Transform for the high-res target
     target_transform = transforms.Compose(
@@ -338,7 +358,7 @@ def build_SR_dataset(
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
         pre_transform=val_pre_aug,
-        transform=degrade_transform,
+        transform=degrade_transform,  # Note: using same transform for consistency
         target_transform=target_transform,
     )
 
