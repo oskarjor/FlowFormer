@@ -17,9 +17,9 @@ pwd
 
 python illustrations/visualize_ot_pairs.py \
 	--output_dir="./images/ot_pairs/$SLURM_JOB_ID" \
-	--input_data_path="./var_d16_imagenet/val_cfg_1_5" \
+	--input_data_path="./var_d30_imagenet/val_cfg_1_5" \
 	--target_data_path="./imagenet/val" \
-	--num_pairs=20 \
-	--num_classes=5 \
-	--upscaling_mode="lanczos" \
-	--mapping_file="./output/datasetfile/22635170/ot_mappings.pkl"
+	--num_pairs=16 \
+	--num_classes=4 \
+	--upscaling_mode="nearest" \
+	--mapping_file="output/datasetfile/bs_200/ot_mappings.pkl"

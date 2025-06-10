@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name="64x64_train_sr"   # Sensible name for the job
+#SBATCH --job-name="32->64_train_sr"   # Sensible name for the job
 #SBATCH --account=share-ie-idi      # Account for consumed resources
 #SBATCH --partition=GPUQ
-#SBATCH --gres=gpu:h100:1            # Number of GPUs
+#SBATCH --gres=gpu:1            # Number of GPUs
 #SBATCH --nodes=1               # Number of nodes
 #SBATCH --ntasks-per-node=1              # Number of tasks
 #SBATCH --time=00-00:10:00    # Upper time limit for the job (DD-HH:MM:SS)
@@ -19,15 +19,15 @@ pwd
 export WANDB_API_KEY=$(cat ~/FlowFormer/.wandb_api_key)
 
 python train_SR/train.py \
-	--batch_size=128 \
-	--total_steps=400000 \
+	--batch_size=4 \
+	--total_steps=400001 \
 	--model="otcfm" \
-	--save_dir="./results/otcfm/$SLURM_JOB_ID/" \
+	--save_dir="./results/SR/$SLURM_JOB_ID/" \
 	--pre_image_size=32 \
 	--post_image_size=64 \
 	--lr=1e-4 \
-	--wandb_name="64x64_otcfm" \
-	--wandb_project="flowformer" \
+	--wandb_project="flowformer_SR" \
 	--wandb_entity="oskarjor" \
 	--use_wandb=True \
-	--class_conditional=True
+	--class_conditional=True \
+	--use_amp=True

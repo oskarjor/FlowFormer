@@ -1,12 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name="256->512_train_sr"   # Sensible name for the job
+#SBATCH --job-name="naive_upscale_sample"   # Sensible name for the job
 #SBATCH --account=share-ie-idi      # Account for consumed resources
-#SBATCH --partition=GPUQ
-#SBATCH --gres=gpu:h100:1            # Number of GPUs
+#SBATCH --partition=CPUQ
 #SBATCH --nodes=1               # Number of nodes
 #SBATCH --ntasks-per-node=1              # Number of tasks
-#SBATCH --time=00-00:10:00    # Upper time limit for the job (DD-HH:MM:SS)
-#SBATCH --cpus-per-task=4
+#SBATCH --time=00-02:00:00    # Upper time limit for the job (DD-HH:MM:SS)
 #SBATCH --mem=100G
 #SBATCH --output=%j.out
 #SBATCH --mail-user=oskarjor@ntnu.no
@@ -16,10 +14,10 @@ module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
 pwd
-export WANDB_API_KEY=$(cat ~/FlowFormer/.wandb_api_key)
 
 python train_SR/naive_upscale.py \
 	--save_dir="./output/naive/$SLURM_JOB_ID" \
 	--data_path="./var_d30_imagenet/" \
-	--naive_upscaling "nearest" \
-	--file_format "png"
+	--naive_upscaling="lanczos" \
+	--file_format="png" \
+	--final_size=299

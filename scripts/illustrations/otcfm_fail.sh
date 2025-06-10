@@ -14,11 +14,10 @@ module load Python/3.10.8-GCCcore-12.2.0
 source /cluster/home/oskarjor/.virtualenv/flowformer/bin/activate
 
 python illustrations/otcfm_fail.py \
-    --json_path path/to/flags.json \
-    --save_dir output/illustrations/otcfm_fail \
-    --input_data_path path/to/input_data \
-    --target_data_path path/to/target_data \
-    --num_otcfm_draws 100 \
-    --batch_size 16 \
-    --num_workers 4 \
-    --class_idx 0
+    --save_dir="output/illustrations/otcfm_fail/$SLURM_JOB_ID" \
+    --input_data_path="var_d30_imagenet/" \
+    --target_data_path="imagenet/" \
+    --num_otcfm_draws=10 \
+    --batch_size=16 \
+    --num_workers=1 \
+    --class_idx=0

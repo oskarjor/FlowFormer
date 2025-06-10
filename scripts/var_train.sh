@@ -6,7 +6,7 @@
 #SBATCH --mem=100G
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
-#SBATCH --time=01-00:00:00
+#SBATCH --time=07-00:00:00
 #SBATCH --output=4n_VAR_imagenet_%j.out
 #SBATCH --mail-user=oskarjor@ntnu.no
 #SBATCH --mail-type=NONE
