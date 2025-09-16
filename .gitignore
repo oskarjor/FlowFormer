@@ -19,6 +19,7 @@ imagenet256.npz
 output/
 saved_fid_metrics/
 images/
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
