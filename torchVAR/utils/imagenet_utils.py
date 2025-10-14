@@ -51,3 +51,46 @@ def save_batch_to_imagenet_structure(
         img_pil = PImage.fromarray(img)
         img_path = osp.join(class_dir, f"sample_{start_idx + i}.{file_format}")
         img_pil.save(img_path, subsampling=0, quality=95)
+
+
+def save_batch_with_filenames(
+    images, class_labels, filenames, class_to_idx, output_dir, file_format="png"
+):
+    """
+    Save a batch of images using the original filenames in ImageNet-like directory structure.
+    Args:
+        images: numpy array of shape (B, C, H, W) with values in [0, 255]
+        class_labels: numpy array or tensor of shape (B,) with class indices
+        filenames: list or tuple of original filenames
+        class_to_idx: mapping from class names to indices
+        output_dir: base directory to save images
+        file_format: file format to save as (default: png)
+    """
+    # Create output directory
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create reverse mapping from index to class name
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+
+    # Save images
+    for img, label, filename in zip(images, class_labels, filenames):
+        # Convert label to int if it's a tensor
+        if hasattr(label, "item"):
+            label = label.item()
+
+        # Get class name from index
+        class_name = idx_to_class[label]
+
+        # Create class directory if it doesn't exist
+        class_dir = osp.join(output_dir, class_name)
+        os.makedirs(class_dir, exist_ok=True)
+
+        # Use original filename but change extension if needed
+        base_name = osp.splitext(filename)[0]
+        new_filename = f"{base_name}.{file_format}"
+
+        # Convert from (C, H, W) to (H, W, C) and save
+        img = np.transpose(img, (1, 2, 0))
+        img_pil = PImage.fromarray(img)
+        img_path = osp.join(class_dir, new_filename)
+        img_pil.save(img_path, subsampling=0, quality=95)

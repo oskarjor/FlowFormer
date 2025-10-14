@@ -11,7 +11,7 @@ from tqdm import tqdm
 from torchVAR.models import build_vae_var
 from torchVAR.utils.imagenet_utils import (
     get_imagenet_class_mapping,
-    save_batch_to_imagenet_structure,
+    save_batch_with_filenames,
 )
 from torchvision.datasets.folder import DatasetFolder, IMG_EXTENSIONS
 from torchVAR.utils.data import pil_loader
@@ -153,7 +153,18 @@ def sample_var(argv):
         ]
     )
 
-    dataset = DatasetFolder(
+    # Custom dataset wrapper to include file paths
+    class DatasetWithPaths(DatasetFolder):
+        def __getitem__(self, index):
+            path, target = self.samples[index]
+            sample = self.loader(path)
+            if self.transform is not None:
+                sample = self.transform(sample)
+            # Return image, label, and filename
+            filename = osp.basename(path)
+            return sample, target, filename
+
+    dataset = DatasetWithPaths(
         root=osp.join("./imagenet", split),
         loader=pil_loader,
         extensions=IMG_EXTENSIONS,
@@ -170,13 +181,14 @@ def sample_var(argv):
 
     # sample
     start_time = time.time()
+    dataloader_iter = iter(dataloader)
     with torch.inference_mode():
         for i in tqdm(range(0, num_samples // FLAGS.batch_size + 1)):
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
-                batch = next(dataloader)
-                images, labels = batch
+                batch = next(dataloader_iter)
+                images, labels, filenames = batch
                 images = images.to(device)
                 labels = labels.to(device)
 
@@ -199,11 +211,11 @@ def sample_var(argv):
 
                 images = recon_B3HW.clone().mul_(255).cpu().numpy().astype(np.uint8)
 
-                # Save batch immediately
-                save_batch_to_imagenet_structure(
+                # Save batch with original filenames
+                save_batch_with_filenames(
                     images,
                     labels,
-                    i,
+                    filenames,
                     class_to_idx,
                     osp.join(
                         output_dir,
