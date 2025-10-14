@@ -41,12 +41,11 @@ flags.DEFINE_bool("debug", False, help="debug")
 flags.DEFINE_bool("flash_attn", False, help="flash_attn")
 flags.DEFINE_bool("fused_mlp", False, help="fused_mlp")
 flags.DEFINE_integer("batch_size", 64, help="batch size")
-flags.DEFINE_string("split", "val", help="split")
+flags.DEFINE_string("split", "train", help="split")
 flags.DEFINE_bool("shared_aln", False, help="shared_aln")
 flags.DEFINE_integer("num_levels_to_force", 0, help="number of levels to force")
 flags.DEFINE_float("tf_prob", 0.0, help="teacher forcing probability")
 flags.DEFINE_string("dataset", "imagenet", help="dataset")
-flags.DEFINE_string("split", "train", help="split")
 flags.DEFINE_integer("num_workers", 4, help="number of workers")
 
 
