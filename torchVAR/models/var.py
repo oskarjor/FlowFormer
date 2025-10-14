@@ -263,7 +263,7 @@ class VAR(nn.Module):
                 sliced_gt_indices = gt_indices[:, cur_L - idx_Bl.shape[1] : cur_L]
 
                 idx_Bl = torch.where(
-                    torch.rand(B, device=idx_Bl.device) < tf_prob,
+                    torch.rand(sliced_gt_indices.shape, device=idx_Bl.device) < tf_prob,
                     sliced_gt_indices,
                     idx_Bl,
                 )
