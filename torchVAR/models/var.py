@@ -182,6 +182,9 @@ class VAR(nn.Module):
         top_k=0,
         top_p=0.0,
         more_smooth=False,
+        gt_indices=None,
+        tf_prob=0.5,
+        num_stages_tf=None,
     ) -> torch.Tensor:  # returns reconstructed image (B, 3, H, W) in [0, 1]
         """
         only used for inference, on autoregressive mode
@@ -211,6 +214,12 @@ class VAR(nn.Module):
                 device=self.lvl_1L.device,
             )
 
+        if gt_indices is None:
+            tf_prob = 0
+
+        if num_stages_tf is None:
+            num_stages_tf = len(self.patch_nums) - 1
+
         sos = cond_BD = self.class_emb(
             torch.cat(
                 (label_B, torch.full_like(label_B, fill_value=self.num_classes)), dim=0
@@ -237,7 +246,7 @@ class VAR(nn.Module):
             # assert self.attn_bias_for_masking[:, :, last_L:cur_L, :cur_L].sum() == 0, f'AR with {(self.attn_bias_for_masking[:, :, last_L:cur_L, :cur_L] != 0).sum()} / {self.attn_bias_for_masking[:, :, last_L:cur_L, :cur_L].numel()} mask item'
             cond_BD_or_gss = self.shared_ada_lin(cond_BD)
             x = next_token_map
-            AdaLNSelfAttn.forward
+
             for b in self.blocks:
                 x = b(x=x, cond_BD=cond_BD_or_gss, attn_bias=None)
             logits_BlV = self.get_logits(x, cond_BD)
@@ -248,6 +257,16 @@ class VAR(nn.Module):
             idx_Bl = sample_with_top_k_top_p_(
                 logits_BlV, rng=rng, top_k=top_k, top_p=top_p, num_samples=1
             )[:, :, 0]
+
+            # if teacher forcing is enabled for this stage, randomly swap out indices with ground truth indices
+            if tf_prob > 0 and si != 0 and si <= num_stages_tf:
+                sliced_gt_indices = gt_indices[:, cur_L - idx_Bl.shape[1] : cur_L]
+
+                idx_Bl = torch.where(
+                    torch.rand(B, device=idx_Bl.device) < tf_prob,
+                    sliced_gt_indices,
+                    idx_Bl,
+                )
             if not more_smooth:  # this is the default case
                 h_BChw = self.vae_quant_proxy[0].embedding(idx_Bl)  # B, l, Cvae
             else:  # not used when evaluating FID/IS/Precision/Recall
@@ -270,7 +289,6 @@ class VAR(nn.Module):
                     2, 1, 1
                 )  # double the batch sizes due to CFG
 
-        ### OLD METHOD (only last image)
         result = self.vae_proxy[0].fhat_to_img(f_hat).add_(1).mul_(0.5)
 
         for b in self.blocks:
