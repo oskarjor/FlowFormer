@@ -183,17 +183,18 @@ def sample_var(argv):
     dataloader_iter = iter(dataloader)
     with torch.inference_mode():
         for i in tqdm(range(0, num_samples // FLAGS.batch_size + 1)):
+            batch = next(dataloader_iter)
+            images, labels, filenames = batch
+            images = images.to(device)
+            labels = labels.to(device)
+
+            # Use VAE's built-in encoding
+            idx_list = vae.img_to_idxBl(images, v_patch_nums=patch_nums)
+            gt_indices = torch.cat(idx_list, dim=1)
+            
             with torch.autocast(
                 "cuda", enabled=True, dtype=torch.float16, cache_enabled=True
             ):  # using bfloat16 can be faster
-                batch = next(dataloader_iter)
-                images, labels, filenames = batch
-                images = images.to(device)
-                labels = labels.to(device)
-
-                # Use VAE's built-in encoding
-                idx_list = vae.img_to_idxBl(images, v_patch_nums=patch_nums)
-                gt_indices = torch.cat(idx_list, dim=1)
 
                 recon_B3HW = var.autoregressive_infer_cfg(
                     B=FLAGS.batch_size,
