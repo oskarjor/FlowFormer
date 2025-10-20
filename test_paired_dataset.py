@@ -13,6 +13,12 @@ from torchvision.transforms.functional import InterpolationMode
 from torchVAR.utils.data import normalize_01_into_pm1
 
 
+SYNTHETIC_PATH = "./output/VAR/var_d16/23127566"
+REAL_PATH = "./imagenet"
+IMAGE_SIZE = 256
+SPLIT = "train"
+
+
 def test_basic_creation():
     """Test basic dataset creation."""
     print("Test 1: Basic Dataset Creation")
@@ -21,10 +27,10 @@ def test_basic_creation():
     try:
         # Use build_paired_dataset for simplicity
         dataset = build_paired_dataset(
-            synthetic_path="./var_d16_imagenet",
-            real_path="./imagenet",
-            image_size=256,
-            split="val",
+            synthetic_path=SYNTHETIC_PATH,
+            real_path=REAL_PATH,
+            image_size=IMAGE_SIZE,
+            split=SPLIT,
         )
 
         print(f"✓ Dataset created successfully")
@@ -45,10 +51,10 @@ def test_loading_sample():
 
     try:
         dataset = build_paired_dataset(
-            synthetic_path="./var_d16_imagenet",
-            real_path="./imagenet",
-            image_size=256,
-            split="val",
+            synthetic_path=SYNTHETIC_PATH,
+            real_path=REAL_PATH,
+            image_size=IMAGE_SIZE,
+            split=SPLIT,
         )
 
         # Load first sample
@@ -103,8 +109,8 @@ def test_custom_transforms():
         )
 
         dataset = PairedImageDataset(
-            synthetic_path="./var_d16_imagenet/val",
-            real_path="./imagenet/val",
+            synthetic_path=f"{SYNTHETIC_PATH}/{SPLIT}",
+            real_path=f"{REAL_PATH}/{SPLIT}",
             synthetic_transform=synthetic_transform,
             real_transform=real_transform,
         )
@@ -139,10 +145,10 @@ def test_dataloader():
         from torch.utils.data import DataLoader
 
         dataset = build_paired_dataset(
-            synthetic_path="./output/VAR/var_d16/23127566",
-            real_path="./imagenet",
-            image_size=256,
-            split="train",
+            synthetic_path=SYNTHETIC_PATH,
+            real_path=REAL_PATH,
+            image_size=IMAGE_SIZE,
+            split=SPLIT,
         )
 
         dataloader = DataLoader(
@@ -183,10 +189,10 @@ def test_multiple_samples():
 
     try:
         dataset = build_paired_dataset(
-            synthetic_path="./var_d16_imagenet",
-            real_path="./imagenet",
-            image_size=256,
-            split="val",
+            synthetic_path=SYNTHETIC_PATH,
+            real_path=REAL_PATH,
+            image_size=IMAGE_SIZE,
+            split=SPLIT,
         )
 
         # Load first 5 samples
@@ -223,13 +229,13 @@ def main():
     print()
 
     # Check if directories exist
-    if not osp.exists("./var_d16_imagenet"):
-        print("⚠ Warning: ./var_d16_imagenet not found")
+    if not osp.exists(SYNTHETIC_PATH):
+        print(f"⚠ Warning: {SYNTHETIC_PATH} not found")
         print("  Please update paths in this script to match your setup")
         print()
 
-    if not osp.exists("./imagenet"):
-        print("⚠ Warning: ./imagenet not found")
+    if not osp.exists(REAL_PATH):
+        print(f"⚠ Warning: {REAL_PATH} not found")
         print("  Please update paths in this script to match your setup")
         print()
 
