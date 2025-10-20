@@ -195,6 +195,11 @@ def test_multiple_samples():
 
         for i in range(num_samples):
             synthetic_img, real_img, class_idx = dataset[i]
+            if synthetic_img.shape != real_img.shape:
+                print(
+                    f"✗ Synthetic image shape {synthetic_img.shape} does not match real image shape {real_img.shape}"
+                )
+                return False
             samples_loaded += 1
 
         print(f"✓ Successfully loaded {samples_loaded} samples")
