@@ -139,10 +139,10 @@ def test_dataloader():
         from torch.utils.data import DataLoader
 
         dataset = build_paired_dataset(
-            synthetic_path="./var_d16_imagenet",
+            synthetic_path="./output/VAR/var_d16/23127566",
             real_path="./imagenet",
             image_size=256,
-            split="val",
+            split="train",
         )
 
         dataloader = DataLoader(
