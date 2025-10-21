@@ -186,10 +186,11 @@ def finetune_sr(argv):
         random_ys.append(y)
     random_x0s = torch.stack(random_x0s, dim=0)
     random_x1s = torch.stack(random_x1s, dim=0)
-    random_ys = torch.stack(random_ys, dim=0)
+    random_ys = torch.Tensor(random_ys)
     random_x0s = random_x0s.to(device)
     random_x1s = random_x1s.to(device)
     random_ys = random_ys.to(device)
+    print(random_x0s.shape, random_x1s.shape, random_ys.shape)
 
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
@@ -199,6 +200,7 @@ def finetune_sr(argv):
         x0 = x0.to(device)
         x1 = x1.to(device)
         y = y.to(device)
+        print(x0.shape, x1.shape, y.shape)
 
         with autocast(device_type=device.type, enabled=FLAGS.use_amp):
             t, xt, ut, _, y = FM.guided_sample_location_and_conditional_flow(
