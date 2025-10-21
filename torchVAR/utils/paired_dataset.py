@@ -193,7 +193,9 @@ def build_paired_dataset(
     if synthetic_transform is None:
         synthetic_transform = transforms.Compose(
             [
-                transforms.Resize(image_size, interpolation=interpolation),
+                transforms.Resize(
+                    round(image_size * 1.125), interpolation=interpolation
+                ),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
