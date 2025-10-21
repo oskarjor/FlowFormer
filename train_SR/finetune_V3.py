@@ -45,6 +45,7 @@ flags.DEFINE_integer("warmup", 5000, help="warmup")
 flags.DEFINE_boolean("use_wandb", False, help="use wandb")
 flags.DEFINE_boolean("use_amp", False, "Whether to use Automatic Mixed Precision.")
 flags.DEFINE_float("learning_rate", 1e-4, "learning rate")
+flags.DEFINE_float("sigma", 0.0, "sigma")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -144,7 +145,7 @@ def finetune_sr(argv):
     datalooper = infiniteloop(dataloader)
 
     # LOAD FLOW MATCHER
-    sigma = 0.0
+    sigma = FLAGS.sigma
     if FLAGS.model == "otcfm":
         FM = ExactOptimalTransportConditionalFlowMatcher(sigma=sigma)
     elif FLAGS.model == "icfm":
