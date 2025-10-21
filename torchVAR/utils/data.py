@@ -13,6 +13,10 @@ def normalize_01_into_pm1(x):  # normalize x from [0, 1] to [-1, 1] by (x*2) - 1
     return x.add(x).add_(-1)
 
 
+def denormalize_pm1_into_01(x):  # denormalize x from [-1, 1] to [0, 1] by (x+1)/2
+    return x.add(1).div(2)
+
+
 def build_dataset(
     data_path: str,
     final_reso: int,

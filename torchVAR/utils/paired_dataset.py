@@ -11,6 +11,7 @@ import os.path as osp
 from typing import Optional, Callable
 import PIL.Image as PImage
 from torchvision.datasets.folder import DatasetFolder
+from torchvision.transforms.functional import InterpolationMode
 
 
 def pil_loader(path):
@@ -166,6 +167,7 @@ def build_paired_dataset(
     synthetic_path: str,
     real_path: str,
     image_size: int,
+    interpolation: InterpolationMode = InterpolationMode.LANCZOS,
     synthetic_transform: Optional[Callable] = None,
     real_transform: Optional[Callable] = None,
     split: str = "train",
@@ -186,13 +188,12 @@ def build_paired_dataset(
     """
     from torchvision import transforms
     from torchVAR.utils.data import normalize_01_into_pm1
-    from torchvision.transforms.functional import InterpolationMode
 
     # Default transforms if not provided
     if synthetic_transform is None:
         synthetic_transform = transforms.Compose(
             [
-                transforms.Resize(image_size, interpolation=InterpolationMode.LANCZOS),
+                transforms.Resize(image_size, interpolation=interpolation),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
@@ -203,7 +204,7 @@ def build_paired_dataset(
         real_transform = transforms.Compose(
             [
                 transforms.Resize(
-                    round(image_size * 1.125), interpolation=InterpolationMode.LANCZOS
+                    round(image_size * 1.125), interpolation=interpolation
                 ),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),

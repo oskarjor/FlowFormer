@@ -24,6 +24,7 @@ from torch.amp import GradScaler, autocast
 import os
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
+from torchVAR.utils.data import denormalize_pm1_into_01
 
 FLAGS = flags.FLAGS
 
@@ -134,6 +135,7 @@ def finetune_sr(argv):
         synthetic_path=FLAGS.input_data_path,
         real_path=FLAGS.real_data_path,
         image_size=json_args["post_image_size"],
+        interpolation=upscaling_mode,
         split="train",
     )
 
@@ -242,8 +244,16 @@ def finetune_sr(argv):
             )
 
             # save the x0 and x1 images
-            save_image(x0, FLAGS.save_dir + f"x0_step_{step}.png")
-            save_image(x1, FLAGS.save_dir + f"x1_step_{step}.png")
+            save_image(
+                denormalize_pm1_into_01(x0),
+                FLAGS.save_dir + f"x0_step_{step}.png",
+                nrow=8,
+            )
+            save_image(
+                denormalize_pm1_into_01(x1),
+                FLAGS.save_dir + f"x1_step_{step}.png",
+                nrow=8,
+            )
 
             # generate samples
             try:
