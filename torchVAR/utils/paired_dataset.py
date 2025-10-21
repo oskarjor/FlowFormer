@@ -202,7 +202,7 @@ def build_paired_dataset(
         synthetic_transform = transforms.Compose(
             [
                 transforms.Resize(
-                    round(image_size * 1.125), interpolation=interpolation
+                    round(image_size * 1.125), interpolation=InterpolationMode.LANCZOS
                 ),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
