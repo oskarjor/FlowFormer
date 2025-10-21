@@ -213,7 +213,7 @@ def build_paired_dataset(
     if real_transform is None:
         real_transform = transforms.Compose(
             [
-                transforms.Resize(image_size, nterpolation=InterpolationMode.LANCZOS),
+                transforms.Resize(image_size, interpolation=InterpolationMode.LANCZOS),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize_01_into_pm1,
