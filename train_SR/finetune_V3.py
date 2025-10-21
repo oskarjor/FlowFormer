@@ -93,11 +93,9 @@ def finetune_sr(argv):
     ema_model = copy.deepcopy(net_model)
     ema_model.load_state_dict(model_weights["ema_model"])
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.learning_rate)
-    optim.load_state_dict(model_weights["optim"])
     sched = torch.optim.lr_scheduler.LambdaLR(
         optim, lr_lambda=lambda step: warmup_lr(step, FLAGS.warmup)
     )
-    sched.load_state_dict(model_weights["sched"])
 
     if FLAGS.use_wandb:
         import wandb
