@@ -23,6 +23,7 @@ from torchcfm.utils_SR import (
 from torch.amp import GradScaler, autocast
 import os
 from torch.utils.data import DataLoader
+from torchvision.utils import save_image
 
 FLAGS = flags.FLAGS
 
@@ -239,6 +240,10 @@ def finetune_sr(argv):
                 FLAGS.save_dir
                 + f"{FLAGS.model}_{json_args['pre_image_size']}_to_{json_args['post_image_size']}_weights_step_{step}_finetuned.pt",
             )
+
+            # save the x0 and x1 images
+            save_image(x0, FLAGS.save_dir + f"x0_step_{step}.png")
+            save_image(x1, FLAGS.save_dir + f"x1_step_{step}.png")
 
             # generate samples
             try:
