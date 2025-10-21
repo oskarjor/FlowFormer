@@ -200,7 +200,13 @@ class ConditionalFlowMatcher:
     def guided_sample_location_and_conditional_flow(
         self, x0, x1, y0=None, y1=None, t=None, return_noise=False
     ):
-        return self.sample_location_and_conditional_flow(x0, x1, t, return_noise)
+        values = self.sample_location_and_conditional_flow(x0, x1, t, return_noise)
+        if return_noise:
+            t, xt, ut, eps = values
+            return t, xt, ut, y0, y1, eps
+        else:
+            t, xt, ut = values
+            return t, xt, ut, y0, y1
 
     def compute_lambda(self, t):
         """Compute the lambda function, see Eq.(23) [3].
