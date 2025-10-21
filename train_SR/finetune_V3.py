@@ -170,6 +170,27 @@ def finetune_sr(argv):
 
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
+    # Draw 16 random images from the dataset using torch
+    num_draw = 16
+    # Get dataset length and random indices
+    dataset_len = len(dataset)
+    rand_indices = torch.randperm(dataset_len)[:num_draw]
+    random_x0s = []
+    random_x1s = []
+    random_ys = []
+    for idx in rand_indices:
+        x0, x1, y = dataset[idx]
+        # If dataset returns tuple (x0, x1, y), just take the input image (e.g., x0)
+        random_x0s.append(x0)
+        random_x1s.append(x1)
+        random_ys.append(y)
+    random_x0s = torch.stack(random_x0s, dim=0)
+    random_x1s = torch.stack(random_x1s, dim=0)
+    random_ys = torch.stack(random_ys, dim=0)
+    random_x0s = random_x0s.to(device)
+    random_x1s = random_x1s.to(device)
+    random_ys = random_ys.to(device)
+
     for step in range(FLAGS.total_steps):
         optim.zero_grad()
 
@@ -243,15 +264,14 @@ def finetune_sr(argv):
                 + f"{FLAGS.model}_{json_args['pre_image_size']}_to_{json_args['post_image_size']}_weights_step_{step}_finetuned.pt",
             )
 
-            # save the x0 and x1 images
             save_image(
-                denormalize_pm1_into_01(x0),
-                FLAGS.save_dir + f"x0_step_{step}.png",
+                denormalize_pm1_into_01(random_x0s),
+                FLAGS.save_dir + f"x0_step_{step}_samples.png",
                 nrow=8,
             )
             save_image(
-                denormalize_pm1_into_01(x1),
-                FLAGS.save_dir + f"x1_step_{step}.png",
+                denormalize_pm1_into_01(random_x1s),
+                FLAGS.save_dir + f"x1_step_{step}_samples.png",
                 nrow=8,
             )
 
@@ -263,8 +283,8 @@ def finetune_sr(argv):
                     FLAGS.save_dir,
                     step,
                     image_size=json_args["post_image_size"],
-                    x0=x0,
-                    y=y,
+                    x0=random_x0s,
+                    y=random_ys,
                     class_cond=json_args["class_conditional"],
                     num_samples=FLAGS.batch_size,
                     num_classes=NUM_CLASSES,
@@ -283,8 +303,8 @@ def finetune_sr(argv):
                     FLAGS.save_dir,
                     step,
                     image_size=json_args["post_image_size"],
-                    x0=x0,
-                    y=y,
+                    x0=random_x0s,
+                    y=random_ys,
                     class_cond=json_args["class_conditional"],
                     num_samples=FLAGS.batch_size,
                     num_classes=NUM_CLASSES,
