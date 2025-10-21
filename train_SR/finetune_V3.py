@@ -186,7 +186,7 @@ def finetune_sr(argv):
         random_ys.append(y)
     random_x0s = torch.stack(random_x0s, dim=0)
     random_x1s = torch.stack(random_x1s, dim=0)
-    random_ys = torch.Tensor(random_ys, dtype=torch.int64)
+    random_ys = torch.tensor(random_ys, dtype=torch.int64)
     random_x0s = random_x0s.to(device)
     random_x1s = random_x1s.to(device)
     random_ys = random_ys.to(device)
