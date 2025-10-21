@@ -200,6 +200,7 @@ def finetune_sr(argv):
         y = y.to(device)
 
         with autocast(device_type=device.type, enabled=FLAGS.use_amp):
+            # if "otcfm" or "si" use guided sampling, otherwise use regular sampling (no OT plan or labels)
             t, xt, ut, _, y = FM.guided_sample_location_and_conditional_flow(
                 x0, x1, y0=y, y1=y
             )
