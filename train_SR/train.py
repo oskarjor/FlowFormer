@@ -333,8 +333,8 @@ def train(argv):
             # Validate on a batch from validation set
             net_model.eval()
             with torch.no_grad():
-                val_loss = 0
-                recon_loss = 0
+                total_val_loss = 0
+                total_recon_loss = 0
                 for val_step in range(FLAGS.validation_steps):
                     val_x0, val_x1, val_y = next(val_datalooper)
                     val_x0, val_x1 = val_x0.to(device), val_x1.to(device)
@@ -371,23 +371,26 @@ def train(argv):
 
                             # calculate the reconstruction loss
                             recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
+                            total_recon_loss += recon_loss.item()
                             print(f"Reconstruction Loss: {recon_loss.item():.4f}")
                         except Exception as e:
                             print(f"Error generating samples at step {step}: {e}")
                             generated_x1 = None
 
-                    val_loss += val_loss.item()
+                    total_val_loss += val_loss.item()
 
-                val_loss /= FLAGS.validation_steps
+                total_val_loss /= FLAGS.validation_steps
+                total_recon_loss /= FLAGS.validation_steps
 
-                print(f"Validation Loss: {val_loss.item():.4f}")
+                print(f"Validation Loss: {total_val_loss:.4f}")
+                print(f"Validation Reconstruction Loss: {total_recon_loss:.4f}")
 
                 if FLAGS.use_wandb:
                     wandb.log(
                         {
-                            "val/loss": val_loss,
+                            "val/loss": total_val_loss,
                             "val/step": step,
-                            "val/recon_loss": recon_loss,
+                            "val/recon_loss": total_recon_loss,
                         }
                     )
 

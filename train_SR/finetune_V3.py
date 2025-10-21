@@ -91,8 +91,10 @@ def finetune_sr(argv):
 
     model_weights = torch.load(FLAGS.model_path, map_location=device)
     net_model.load_state_dict(model_weights["net_model"])
+
     ema_model = copy.deepcopy(net_model)
     ema_model.load_state_dict(model_weights["ema_model"])
+
     optim = torch.optim.Adam(net_model.parameters(), lr=FLAGS.learning_rate)
     sched = torch.optim.lr_scheduler.LambdaLR(
         optim, lr_lambda=lambda step: warmup_lr(step, FLAGS.warmup)
@@ -139,7 +141,11 @@ def finetune_sr(argv):
     )
 
     dataloader = DataLoader(
-        dataset, batch_size=FLAGS.batch_size, num_workers=FLAGS.num_workers
+        dataset,
+        batch_size=FLAGS.batch_size,
+        num_workers=FLAGS.num_workers,
+        shuffle=True,
+        drop_last=True,
     )
 
     datalooper = infiniteloop(dataloader)
@@ -170,7 +176,7 @@ def finetune_sr(argv):
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     # Draw 16 random images from the dataset using torch
-    num_draw = 16
+    num_draw = FLAGS.batch_size
     # Get dataset length and random indices
     dataset_len = len(dataset)
     rand_indices = torch.randperm(dataset_len)[:num_draw]
