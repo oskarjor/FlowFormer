@@ -66,7 +66,7 @@ class PairedImageDataset(DatasetFolder):
         synthetic_transform: Optional[Callable] = None,
         real_transform: Optional[Callable] = None,
         loader: Callable = pil_loader,
-        synthetic_extensions: tuple = (".png",),
+        synthetic_extensions: tuple = (".JPEG", ".jpeg", ".jpg", ".png"),
         real_extension: str = ".JPEG",
     ):
         # Initialize the base DatasetFolder with synthetic path
@@ -171,6 +171,7 @@ def build_paired_dataset(
     synthetic_transform: Optional[Callable] = None,
     real_transform: Optional[Callable] = None,
     split: str = "train",
+    real_extension: str = ".JPEG",
 ):
     """
     Build a paired dataset with default transforms.
@@ -224,6 +225,7 @@ def build_paired_dataset(
         real_path=osp.join(real_path, split),
         synthetic_transform=synthetic_transform,
         real_transform=real_transform,
+        real_extension=real_extension,
     )
 
     return dataset

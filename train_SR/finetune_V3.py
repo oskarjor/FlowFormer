@@ -46,6 +46,7 @@ flags.DEFINE_boolean("use_wandb", False, help="use wandb")
 flags.DEFINE_boolean("use_amp", False, "Whether to use Automatic Mixed Precision.")
 flags.DEFINE_float("learning_rate", 1e-4, "learning rate")
 flags.DEFINE_float("sigma", 0.0, "sigma")
+flags.DEFINE_string("real_extension", ".JPEG", "real extension")
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -138,6 +139,7 @@ def finetune_sr(argv):
         image_size=json_args["post_image_size"],
         interpolation=upscaling_mode,
         split="train",
+        real_extension=FLAGS.real_extension,
     )
 
     dataloader = DataLoader(
