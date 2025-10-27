@@ -27,6 +27,7 @@ from torchcfm.conditional_flow_matching import (
     ExactOptimalTransportConditionalFlowMatcher,
     TargetConditionalFlowMatcher,
     VariancePreservingConditionalFlowMatcher,
+    SchrodingerBridgeConditionalFlowMatcher,
 )
 from torchcfm.models.unet.unet import UNetModelWrapper
 
@@ -238,6 +239,8 @@ def train(argv):
         FM = TargetConditionalFlowMatcher(sigma=sigma)
     elif FLAGS.model == "si":
         FM = VariancePreservingConditionalFlowMatcher(sigma=sigma)
+    elif FLAGS.model == "sbcfm":
+        FM = SchrodingerBridgeConditionalFlowMatcher(sigma=sigma)
     else:
         raise NotImplementedError(
             f"Unknown model {FLAGS.model}, must be one of ['otcfm', 'icfm', 'fm', 'si']"
