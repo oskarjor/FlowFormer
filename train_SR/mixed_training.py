@@ -392,7 +392,10 @@ def train(argv):
                             net_model.eval()
 
                             # calculate the reconstruction loss
-                            recon_loss = torch.mean((generated_x1 - val_x1) ** 2)
+                            normalized_val_x1 = val_x1 / 2 + 0.5
+                            recon_loss = torch.mean(
+                                (generated_x1 - normalized_val_x1) ** 2
+                            )
                             total_recon_loss += recon_loss.item()
                             print(f"Reconstruction Loss: {recon_loss.item():.4f}")
                         except Exception as e:
