@@ -129,8 +129,6 @@ def train(argv):
             pre_image_size=FLAGS.pre_image_size,
             post_image_size=FLAGS.post_image_size,
             naive_upscaling=FLAGS.naive_upscaling,
-            robust_augmentations=FLAGS.robust_augmentations,
-            augment_prob=FLAGS.augment_prob,
         )
 
         if FLAGS.debug:
