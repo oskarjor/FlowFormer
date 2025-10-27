@@ -63,6 +63,7 @@ flags.DEFINE_string(
     "input_data_path", "./output/VAR/var_d30/lvl10_prob1.0", help="input data path"
 )
 flags.DEFINE_float("synthetic_ratio", 0.2, help="synthetic ratio")
+flags.DEFINE_float("sigma", 0.0, help="sigma")
 
 # Evaluation
 flags.DEFINE_integer(
@@ -255,7 +256,7 @@ def train(argv):
     #            OT-CFM
     #################################
 
-    sigma = 0.0
+    sigma = FLAGS.sigma
     if FLAGS.model == "otcfm":
         FM = ExactOptimalTransportConditionalFlowMatcher(sigma=sigma)
     elif FLAGS.model == "icfm":
