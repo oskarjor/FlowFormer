@@ -12,6 +12,7 @@ from typing import Optional, Callable
 import PIL.Image as PImage
 from torchvision.datasets.folder import DatasetFolder
 from torchvision.transforms.functional import InterpolationMode
+from torchVAR.utils.data import build_SR_dataset
 
 
 def pil_loader(path):
@@ -229,3 +230,34 @@ def build_paired_dataset(
     )
 
     return dataset
+
+
+def build_mixed_dataset(
+    input_data_path: str,
+    real_data_path: str,
+    pre_image_size: int,
+    post_image_size: int,
+    interpolation: InterpolationMode = InterpolationMode.LANCZOS,
+    split: str = "train",
+    real_extension: str = ".JPEG",
+):
+    """
+    Build a mixed dataset with synthetic and real images.
+    """
+    synthetic_dataset = build_paired_dataset(
+        synthetic_path=input_data_path,
+        real_path=real_data_path,
+        image_size=post_image_size,
+        interpolation=interpolation,
+        split=split,
+        real_extension=real_extension,
+    )
+
+    train_set, val_set = build_SR_dataset(
+        data_path=real_data_path,
+        pre_image_size=pre_image_size,
+        post_image_size=post_image_size,
+        naive_upscaling=interpolation,
+    )
+
+    return train_set, val_set, synthetic_dataset
