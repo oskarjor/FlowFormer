@@ -154,7 +154,7 @@ def sample_sr(argv):
     x0_dataloader = torch.utils.data.DataLoader(
         input_data,
         batch_size=FLAGS.batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=FLAGS.num_workers,
         drop_last=False,
         pin_memory=True,
